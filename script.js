@@ -1,13 +1,17 @@
 const $=s=>document.querySelector(s);
 const rooms=[
-{title:"ARMY VALUES // LDRSHIP CIPHER",stars:1,brief:"Match seven situations to the strongest Army Value, then recover the Army founding key.",hint:"Separate Integrity, Honor, Duty, Selfless Service, and Personal Courage by asking what the situation is really testing."},
-{title:"CADET CREED // BROKEN TRANSMISSION",stars:2,brief:"Restore missing Creed words, rebuild the sequence, and identify the JROTC founding year.",hint:"Think identity → conduct → loyalty/patriotism → accountability → self-development → leadership → Constitution."},
+{title:"ARMY VALUES // LDRSHIP CIPHER",stars:1,brief:"Match seven situations to the strongest Army Value, then solve the first logic riddle.",hint:"Separate Integrity, Honor, Duty, Selfless Service, and Personal Courage by asking what the situation is really testing."},
+{title:"CADET CREED // BROKEN TRANSMISSION",stars:2,brief:"Restore missing Creed words and rebuild the Creed sequence.",hint:"Think identity → conduct → loyalty/patriotism → accountability → self-development → leadership → Constitution."},
 {title:"COLLEGE PATHWAYS // DESTINATION UNKNOWN",stars:3,brief:"Match four cadets to realistic postsecondary pathways based on career goals, cost, grades, and learning preferences.",hint:"The best pathway is the one that fits the career requirement and the student's circumstances—not simply the most prestigious option."},
 {title:"PERSONAL FINANCE // THE $1,850 PROBLEM",stars:4,brief:"Classify expenses, build savings, and solve a credit decision without confusing available credit with available money.",hint:"Pay yourself first means intentionally fund savings before discretionary spending."},
-{title:"LEADERSHIP DECISION // THREE ACCEPTANCE LETTERS",stars:5,brief:"Choose and defend a college option, then decide whether new information should change the recommendation.",hint:"Use cost, career fit, opportunity, values, debt, and long-term consequences. Strong leadership can adapt when the facts change."},
+{title:"LEADERSHIP DECISION // THREE ACCEPTANCE LETTERS",stars:5,brief:"Choose a college option using structured decision factors, then respond when new information changes the problem.",hint:"Use cost, career fit, opportunity, values, debt, and long-term consequences. Strong leadership can adapt when the facts change."},
 {title:"FINAL EXTRACTION // RECOVER THE BRIEFING",stars:6,brief:"Use every recovered key and all three riddle tokens to restore the Future Readiness Briefing.",hint:"Build the future in this order: VALUES → PATHWAY → MONEY → DECISION. Then follow the terminal rule exactly."}
 ];
 let room=0,score=3000,time=2100,timer=null,inventory=[],hints=0,callsign="",riddleTokens=[],log=[];
+let soundOn=true,audioCtx=null;
+function audio(){if(!soundOn)return null;if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==="suspended")audioCtx.resume();return audioCtx}
+function tone(freq,dur,type="sine",vol=.07,delay=0){const ctx=audio();if(!ctx)return;const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.value=freq;g.gain.value=vol;o.connect(g);g.connect(ctx.destination);const st=ctx.currentTime+delay;g.gain.setValueAtTime(vol,st);g.gain.exponentialRampToValueAtTime(.001,st+dur);o.start(st);o.stop(st+dur)}
+function sfx(kind){if(!soundOn)return;if(kind==="wrong"){tone(185,.14,"square",.06);tone(115,.2,"square",.05,.12)}if(kind==="unlock"){tone(440,.11,"sine",.05);tone(660,.13,"sine",.06,.10);tone(880,.18,"sine",.07,.21)}if(kind==="success"){tone(523,.14,"triangle",.05);tone(659,.14,"triangle",.05,.13);tone(784,.17,"triangle",.06,.26);tone(1047,.28,"triangle",.07,.40)}if(kind==="hint"){tone(320,.08,"sine",.04);tone(460,.10,"sine",.04,.08)}document.querySelector("main .panel.active")?.classList.add("audioPulse");setTimeout(()=>document.querySelector("main .panel.active")?.classList.remove("audioPulse"),380)}
 
 function screen(id){["start","game","complete","failed"].forEach(x=>$("#"+x).classList.remove("active"));$("#"+id).classList.add("active")}
 function fmt(s){return Math.floor(Math.max(0,s)/60)+":"+String(Math.max(0,s)%60).padStart(2,"0")}
@@ -15,11 +19,12 @@ function hud(){$("#clock").textContent=fmt(time);$("#score").textContent=score;$
 function statusRows(){$("#roomStatus").innerHTML=rooms.map((x,i)=>`<div class="statusRow ${i<room?"done":i===room?"current":""}">${i<room?"✓":"▸"} ROOM ${i+1} // ${x.title.split("//")[0].trim()}</div>`).join("")}
 function inv(){$("#inventory").innerHTML=inventory.length?inventory.map(x=>`<div class="asset">${x}</div>`).join(""):`<p class="muted">No keys recovered.</p>`}
 function fb(msg,kind=""){$("#feedback").className="feedback "+kind;$("#feedback").innerHTML=msg}
-function penalty(points,msg){score=Math.max(0,score-points);hud();fb(msg+` • −${points} points`,"warn")}
-function completeRoom(asset,summary){inventory.push(asset);inv();log.push(`Room ${room+1}: ${summary}`);fb(`<b>ROOM CLEARED.</b><br>${asset}`);room++;hud();$("#hintBox").textContent="";setTimeout(()=>room>=6?finish():render(),700)}
+function penalty(points,msg){sfx("wrong");score=Math.max(0,score-points);hud();fb(msg+` • −${points} points`,"warn")}
+function completeRoom(asset,summary){inventory.push(asset);inv();log.push(`Room ${room+1}: ${summary}`);sfx(room===5?"success":"unlock");fb(`<b>ROOM CLEARED.</b><br>${asset}`);room++;hud();$("#hintBox").textContent="";setTimeout(()=>room>=6?finish():render(),700)}
 
 $("#startBtn").onclick=()=>{callsign=$("#callsign").value.trim();if(!callsign)return alert("Enter a cadet or team callsign.");screen("game");render();timer=setInterval(()=>{time--;hud();if(time<=0){clearInterval(timer);screen("failed")}},1000)}
-$("#hintBtn").onclick=()=>{if(room>=6)return;time=Math.max(0,time-45);hints++;$("#hintBox").textContent="INTEL: "+rooms[room].hint;hud()}
+$("#hintBtn").onclick=()=>{if(room>=6)return;sfx("hint");time=Math.max(0,time-45);hints++;$("#hintBox").textContent="INTEL: "+rooms[room].hint;hud()}
+$("#soundBtn").onclick=()=>{soundOn=!soundOn;$("#soundBtn").textContent="SOUND: "+(soundOn?"ON":"OFF");if(soundOn){audio();tone(520,.08,"sine",.04);tone(720,.1,"sine",.04,.08)}}
 
 function render(){hud();$("#feedback").className="";$("#feedback").innerHTML="";$("#roomTag").textContent=`ROOM ${room+1} OF 6`;$("#roomTitle").textContent=rooms[room].title;$("#roomBrief").textContent=rooms[room].brief;$("#difficulty").textContent="DIFFICULTY "+"★".repeat(rooms[room].stars)+"☆".repeat(6-rooms[room].stars);[army,creed,pathways,finance,leadership,finalRoom][room]()}
 
@@ -36,27 +41,18 @@ function army(){
  let p=$("#work");p.innerHTML=`<div class="taskbox"><h3>PHASE 1 // VALUE MATCH</h3><p class="instruction">Match each situation to its strongest controlling Army Value.</p><div id="valueRows"></div><button id="valueCheck">VERIFY LDRSHIP</button></div><div id="armyRiddle"></div>`;
  let ans=Array(items.length).fill("");
  items.forEach((it,i)=>{let row=document.createElement("div");row.className="valueGrid";row.innerHTML=`<span>${it[0]}</span>`;let s=document.createElement("select");s.innerHTML=`<option value="">SELECT VALUE</option>`+values.map(v=>`<option>${v}</option>`).join("");s.onchange=()=>ans[i]=s.value;row.appendChild(s);$("#valueRows").appendChild(row)});
- $("#valueCheck").onclick=()=>{if(ans.some(x=>!x))return fb("Complete all seven value matches.","warn");let n=ans.filter((x,i)=>x===items[i][1]).length;if(n<7)return penalty((7-n)*35,`${n}/7 values correct. Recheck the controlling value`);$("#armyRiddle").innerHTML=`<div class="taskbox"><h3>PHASE 2 // RIDDLE TOKEN</h3><div class="riddle">I am an odd number. Take away one letter and I become even. What number am I?</div><input id="r1"><button id="r1b">UNLOCK RIDDLE</button></div>`;$("#r1b").onclick=()=>{if($("#r1").value.trim().toLowerCase()!=="seven")return penalty(45,"Riddle answer rejected");riddleTokens.push("7");$("#armyRiddle").innerHTML+=`<div class="taskbox"><h3>PHASE 3 // ARMY BIRTHDAY</h3><p class="instruction">Enter the founding year of the United States Army.</p><input id="armyYear" placeholder="4-DIGIT YEAR"><button id="armyYearBtn">AUTHENTICATE</button></div>`;$("#armyYearBtn").onclick=()=>$("#armyYear").value.trim()==="1775"?completeRoom("ARMY KEY // 1775 • RIDDLE TOKEN // 7","LDRSHIP and Army birthday verified"):penalty(60,"Army birthday key rejected")}}
+ $("#valueCheck").onclick=()=>{if(ans.some(x=>!x))return fb("Complete all seven value matches.","warn");let n=ans.filter((x,i)=>x===items[i][1]).length;if(n<7)return penalty((7-n)*35,`${n}/7 values correct. Recheck the controlling value`);$("#armyRiddle").innerHTML=`<div class="taskbox"><h3>PHASE 2 // RIDDLE TOKEN</h3><div class="riddle">I am an odd number. Take away one letter and I become even. What number am I?</div><input id="r1"><button id="r1b">UNLOCK RIDDLE</button></div>`;$("#r1b").onclick=()=>{if($("#r1").value.trim().toLowerCase()!=="seven")return penalty(45,"Riddle answer rejected");riddleTokens.push("7");completeRoom("ARMY KEY // LDRSHIP • RIDDLE TOKEN // 7","Army Values cipher verified")}}
 }
-
 function creed(){
  const blanks=[["I am an Army Junior ROTC ______.","cadet"],["I do not lie, cheat or steal and will always be ______ for my actions and deeds.","accountable"],["I will seek the mantle of ______ and stand prepared to uphold the Constitution and the American way of life.","leadership"]];
- let mixed=[
- "I am an Army Junior ROTC Cadet.",
- "I am loyal and patriotic.",
- "I do not lie, cheat or steal and will always be accountable for my actions and deeds.",
- "I will work hard to improve my mind and strengthen my body.",
- "I will seek the mantle of leadership and stand prepared to uphold the Constitution and the American way of life.",
- "May God grant me the strength to always live by this creed."
- ];
+ let mixed=["I am an Army Junior ROTC Cadet.","I am loyal and patriotic.","I do not lie, cheat or steal and will always be accountable for my actions and deeds.","I will work hard to improve my mind and strengthen my body.","I will seek the mantle of leadership and stand prepared to uphold the Constitution and the American way of life.","May God grant me the strength to always live by this creed."];
  const correct=[...mixed];mixed.sort(()=>Math.random()-.5);
- $("#work").innerHTML=`<div class="taskbox"><h3>PHASE 1 // MISSING CREED WORDS</h3><div id="blanks"></div><button id="blankCheck">VERIFY WORDS</button></div><div id="orderBox" class="taskbox" style="display:none"><h3>PHASE 2 // RECONSTRUCT SEQUENCE</h3><div id="sortCreed"></div><button id="orderCheck">VERIFY SEQUENCE</button></div><div id="yearBox"></div>`;
+ $("#work").innerHTML=`<div class="taskbox"><h3>PHASE 1 // MISSING CREED WORDS</h3><div id="blanks"></div><button id="blankCheck">VERIFY WORDS</button></div><div id="orderBox" class="taskbox" style="display:none"><h3>PHASE 2 // RECONSTRUCT SEQUENCE</h3><div id="sortCreed"></div><button id="orderCheck">VERIFY SEQUENCE</button></div>`;
  blanks.forEach((b,i)=>$("#blanks").innerHTML+=`<label>${b[0]}<input id="cb${i}"></label>`);
  $("#blankCheck").onclick=()=>{let ok=blanks.every((b,i)=>$("#cb"+i).value.trim().toLowerCase()===b[1]);if(!ok)return penalty(55,"One or more Creed words are incorrect");$("#orderBox").style.display="block";draw()};
  function draw(){let s=$("#sortCreed");s.innerHTML="";mixed.forEach((x,i)=>{let d=document.createElement("div");d.className="sortitem";d.innerHTML=`<span>${x}</span><div><button data-u="${i}">▲</button><button data-d="${i}">▼</button></div>`;s.appendChild(d)});s.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>{let i=+b.dataset.u;if(i){[mixed[i-1],mixed[i]]=[mixed[i],mixed[i-1]];draw()}});s.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{let i=+b.dataset.d;if(i<mixed.length-1){[mixed[i+1],mixed[i]]=[mixed[i],mixed[i+1]];draw()}})}
- $("#orderCheck").onclick=()=>{if(JSON.stringify(mixed)!==JSON.stringify(correct))return penalty(70,"Creed sequence rejected");$("#yearBox").innerHTML=`<div class="taskbox"><h3>PHASE 3 // FOUNDING YEAR</h3><div class="riddle">The world was already at war, but America had not yet entered. Woodrow Wilson was President. Congress passed a National Defense Act that formally established JROTC. I am greater than 1915 and less than 1917. What year am I?</div><input id="cy"><button id="cyb">AUTHENTICATE YEAR</button></div>`;$("#cyb").onclick=()=>$("#cy").value.trim()==="1916"?completeRoom("CADET KEY // 1916","Cadet Creed transmission reconstructed"):penalty(60,"JROTC founding year rejected")}
+ $("#orderCheck").onclick=()=>{if(JSON.stringify(mixed)!==JSON.stringify(correct))return penalty(70,"Creed sequence rejected");completeRoom("CADET KEY // CREED","Cadet Creed transmission reconstructed")}
 }
-
 function pathways(){
  const profiles=[
  {n:"Jasmine",d:"3.7 GPA • wants nursing • limited family money • wants to remain reasonably close to home",best:"Community college → transfer"},
@@ -86,20 +82,14 @@ function finance(){
 }
 
 function leadership(){
- const colleges=[
- ["UNIVERSITY A","Desired major • prestigious • $29,000/year net cost • farther from home"],
- ["UNIVERSITY B","Strong desired program • $13,500/year net cost • ROTC available • closer to home"],
- ["UNIVERSITY C","Full scholarship • friends attending • DOES NOT offer desired major"]];
- let choice=null;
- $("#work").innerHTML=`<div class="taskbox"><h3>PHASE 1 // THREE ACCEPTANCE LETTERS</h3><div id="collegeGrid" class="collegeGrid"></div><textarea id="why" placeholder="Defend your choice in 3–5 sentences using cost, career fit, values, opportunity, or long-term consequences."></textarea><button id="leadBtn">LOCK INITIAL DECISION</button></div><div id="twist"></div>`;
- colleges.forEach((c,i)=>{let d=document.createElement("div");d.className="college";d.innerHTML=`<h3>${c[0]}</h3><p>${c[1]}</p><button>SELECT</button>`;d.querySelector("button").onclick=()=>{choice=i;document.querySelectorAll(".college").forEach(x=>x.classList.remove("selected"));d.classList.add("selected")};$("#collegeGrid").appendChild(d)});
- $("#leadBtn").onclick=()=>{let txt=$("#why").value.trim().toLowerCase();if(choice===null)return fb("Select a university.","warn");if(txt.length<100)return fb("Defend the choice in more detail.","warn");let hits=["cost","major","career","rotc","debt","value","future","opportunity","scholar","long"].filter(k=>txt.includes(k)).length;if(hits<2)return penalty(70,"Defense needs clearer tradeoff analysis");twist()};
- function twist(){
- $("#twist").innerHTML=`<div class="intelUpdate"><b>INTELLIGENCE UPDATE:</b> University B awards an additional $6,000/year scholarship, reducing net cost to $7,500.</div><div class="taskbox"><h3>PHASE 2 // ADAPT OR HOLD?</h3><select id="change"><option value="">SELECT</option><option>YES — I WOULD CHANGE</option><option>NO — I WOULD HOLD</option></select><textarea id="changeWhy" placeholder="Explain what information now matters and why."></textarea><button id="changeBtn">SUBMIT FINAL DECISION</button></div>`;
- $("#changeBtn").onclick=()=>{let txt=$("#changeWhy").value.trim().toLowerCase();if(!$("#change").value)return fb("Choose whether your recommendation changes.","warn");if(txt.length<90)return fb("Explain your reasoning in more detail.","warn");let hits=["cost","career","major","debt","value","opportunity","scholar","goal","fit","future"].filter(k=>txt.includes(k)).length;if(hits<2)return penalty(70,"Final explanation needs clearer tradeoff analysis");completeRoom("LEADERSHIP KEY // OWNIT","College choice defended and re-evaluated after new information")}
- }
+ const colleges=[["UNIVERSITY A","Desired major • prestigious • $29,000/year net cost • farther from home"],["UNIVERSITY B","Strong desired program • $13,500/year net cost • ROTC available • closer to home"],["UNIVERSITY C","Full scholarship • friends attending • DOES NOT offer desired major"]];
+ let choice=null,selectedReasons=[];
+ $("#work").innerHTML=`<div class="taskbox"><h3>PHASE 1 // THREE ACCEPTANCE LETTERS</h3><p class="instruction">Select a school, then choose exactly TWO controlling factors that should drive the recommendation.</p><div id="collegeGrid" class="collegeGrid"></div><div id="reasonBox"></div><button id="leadBtn">LOCK INITIAL DECISION</button></div><div id="twist"></div>`;
+ colleges.forEach((c,i)=>{let d=document.createElement("div");d.className="college";d.innerHTML=`<h3>${c[0]}</h3><p>${c[1]}</p><button>SELECT</button>`;d.querySelector("button").onclick=()=>{choice=i;selectedReasons=[];document.querySelectorAll(".college").forEach(x=>x.classList.remove("selected"));d.classList.add("selected");buildReasons()};$("#collegeGrid").appendChild(d)});
+ function buildReasons(){const reasons=["Career/major fit","Total cost and likely debt","ROTC or leadership opportunity","Friends are attending","Prestige/name recognition only","Long-term flexibility"];$("#reasonBox").innerHTML="<h3>SELECT TWO CONTROLLING FACTORS</h3>";reasons.forEach((r,i)=>{let b=document.createElement("button");b.className="option";b.textContent=r;b.onclick=()=>{let at=selectedReasons.indexOf(i);if(at>=0){selectedReasons.splice(at,1);b.classList.remove("selected")}else if(selectedReasons.length<2){selectedReasons.push(i);b.classList.add("selected")}};$("#reasonBox").appendChild(b)})}
+ $("#leadBtn").onclick=()=>{if(choice===null)return fb("Select a university.","warn");if(selectedReasons.length!==2)return fb("Select exactly two controlling factors.","warn");let weak=selectedReasons.filter(i=>[3,4].includes(i)).length;if(weak===2)return penalty(100,"The decision is controlled by social pressure/prestige rather than future-readiness factors");twist()};
+ function twist(){$("#twist").innerHTML=`<div class="intelUpdate"><b>INTELLIGENCE UPDATE:</b> University B awards an additional $6,000/year scholarship, reducing net cost to $7,500.</div><div class="taskbox"><h3>PHASE 2 // ADAPT OR HOLD?</h3><button class="option" id="t1">Ignore it. Strong leaders never change their first decision.</button><button class="option" id="t2">Re-evaluate because cost materially changed while the desired program and ROTC opportunity remain.</button><button class="option" id="t3">Automatically choose University B only because it is cheaper.</button></div>`;$("#t1").onclick=()=>penalty(90,"Stubbornness is not the same as leadership");$("#t3").onclick=()=>penalty(90,"Price matters, but should not erase career fit and opportunity");$("#t2").onclick=()=>completeRoom("LEADERSHIP KEY // OWNIT","College decision re-evaluated when material information changed")}
 }
-
 function finalRoom(){
  $("#work").innerHTML=`<div class="taskbox"><h3>CHECKPOINT // FINAL RIDDLE TOKEN</h3><div class="riddle">Two fathers and two sons go fishing. They catch three fish and each gets one. How is this possible?</div><input id="r3"><button id="r3b">VERIFY RIDDLE</button></div><div id="extract"></div>`;
  $("#r3b").onclick=()=>{let v=$("#r3").value.trim().toLowerCase();let ok=(v.includes("grandfather")&&v.includes("father")&&v.includes("son"))||v.includes("three people");if(!ok)return penalty(45,"Riddle explanation rejected");riddleTokens.push("3");sequence()};
@@ -110,8 +100,8 @@ function finalRoom(){
  $("#seqCheck").onclick=()=>{if(JSON.stringify(items)!==JSON.stringify(correct))return penalty(85,"Future-building sequence rejected");code()};
  }
  function code(){
- $("#codePhase").innerHTML=`<div class="taskbox"><h3>PHASE 2 // FINAL EXTRACTION TERMINAL</h3><div class="codebox">USE YOUR INVENTORY.<br><br>1. LAST TWO digits of ARMY KEY<br>2. LAST TWO digits of CADET KEY<br>3. PATHWAY KEY<br>4. FINANCE KEY<br>5. LEADERSHIP KEY<br>6. Three riddle tokens IN THE ORDER EARNED<br><br>NO SPACES. NO DASHES.</div><input id="finalCode"><button id="finalBtn">RECOVER BRIEFING</button></div>`;
- let answer="7516PATH200OWNIT"+riddleTokens.join("");
+ $("#codePhase").innerHTML=`<div class="taskbox"><h3>PHASE 2 // FINAL EXTRACTION TERMINAL</h3><div class="codebox">USE YOUR INVENTORY.<br><br>1. ARMY KEY<br>2. CADET KEY<br>3. PATHWAY KEY<br>4. FINANCE KEY<br>5. LEADERSHIP KEY<br>6. Three riddle tokens IN THE ORDER EARNED<br><br>NO SPACES. NO DASHES.</div><input id="finalCode"><button id="finalBtn">RECOVER BRIEFING</button></div>`;
+ let answer="LDRSHIPCREEDPATH200OWNIT"+riddleTokens.join("");
  $("#finalBtn").onclick=()=>{let v=$("#finalCode").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");if(v!==answer)return penalty(110,"Extraction code rejected");completeRoom("FUTURE READINESS BRIEFING // RECOVERED","All six readiness systems restored")}
  }
 }
