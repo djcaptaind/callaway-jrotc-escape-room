@@ -1,1 +1,72 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>JROTC Decision Lab V5</title><link rel="stylesheet" href="style.css"></head><body><header>CALLAWAY JROTC <span id="hud"></span></header><main><section id="start"><h1>Leadership Decision Lab <b>V5</b></h1><input id="name" placeholder="Cadet / Team"><select id="lev"><option value="3">LET 3</option><option value="4">LET 4</option></select><button id="go">ENTER</button></section><section id="game" hidden><p id="label"></p><h2 id="title"></h2><p id="brief"></p><div id="task"></div><div id="fb"></div></section><section id="end" hidden><h1>COMPLETE</h1><div id="result"></div><button onclick="location.reload()">RUN AGAIN</button></section></main><script src="script.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Operation Broken Chain | Callaway JROTC</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand"><span>CALLAWAY JROTC</span><small>OPERATIONS COMMAND CENTER // OPERATION BROKEN CHAIN</small></div>
+  <div class="topstats">
+    <div><small>MISSION CLOCK</small><b id="clock">20:00</b></div>
+    <div><small>CURRENT RANK</small><b id="rank">CADET</b></div>
+    <div><small>MISSION STATUS</small><b id="status" class="amber">STANDBY</b></div>
+  </div>
+</header>
+
+<div class="shell">
+<aside>
+  <h3>MISSION FILE</h3>
+  <p class="muted">The Battalion Commander's computer has been locked by a rogue cyber protocol hours before the IG evaluation.</p>
+  <div class="divider"></div>
+  <h3>DIGITAL INVENTORY</h3>
+  <div id="inventory"><p class="muted">No assets recovered.</p></div>
+  <div class="divider"></div>
+  <h3>HINT REQUEST</h3>
+  <p class="muted">Each hint costs 60 seconds.</p>
+  <button id="hintBtn" class="outline">REQUEST INTEL</button>
+  <div id="hintBox" class="hint"></div>
+  <div class="divider"></div>
+  <h3>FIREWALLS</h3>
+  <div id="progress"></div>
+</aside>
+
+<main>
+<section id="briefing" class="panel">
+  <p class="eyebrow">FLASH // PRIORITY ONE</p>
+  <h1>OPERATION<br><span>BROKEN CHAIN</span></h1>
+  <p class="lead">A rogue protocol has severed the battalion's digital chain of command. Restore the command network before the Inspector General team arrives.</p>
+  <div class="briefgrid">
+    <div><small>TIME LIMIT</small><strong>20 MINUTES</strong></div>
+    <div><small>OBJECTIVE</small><strong>5 FIREWALLS</strong></div>
+    <div><small>FAILURE CONDITION</small><strong>LOCKOUT</strong></div>
+  </div>
+  <label>CADET / TEAM CALLSIGN<input id="callsign" placeholder="Enter callsign"></label>
+  <label>MISSION PATH<select id="path"><option value="3">LET 3 // Tactical Leadership</option><option value="4">LET 4 // Senior Leadership</option></select></label>
+  <button id="startBtn">INITIATE MISSION</button>
+</section>
+
+<section id="ops" class="panel hidden">
+  <div class="missionhead"><div><p id="moduleTag" class="eyebrow"></p><h2 id="moduleTitle"></h2></div><div id="moduleState" class="chip">LOCKED</div></div>
+  <p id="moduleBrief" class="lead small"></p>
+  <div id="puzzle"></div>
+  <div id="feedback"></div>
+</section>
+
+<section id="complete" class="panel hidden">
+  <p class="eyebrow">COMMAND NETWORK RESTORED</p>
+  <h1>MISSION <span>COMPLETE</span></h1>
+  <div id="aar"></div>
+  <button onclick="location.reload()">NEW MISSION</button>
+</section>
+
+<section id="failed" class="panel hidden">
+  <p class="eyebrow">SYSTEM LOCKOUT</p><h1>MISSION <span>FAILED</span></h1>
+  <p class="lead">The 20-minute mission window expired before the command bypass was restored.</p>
+  <button onclick="location.reload()">RESTART MISSION</button>
+</section>
+</main>
+</div>
+<script src="script.js"></script>
+</body></html>
