@@ -1,72 +1,7 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Operation Broken Chain | Callaway JROTC</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<header>
-  <div class="brand"><span>CALLAWAY JROTC</span><small>OPERATIONS COMMAND CENTER // OPERATION BROKEN CHAIN</small></div>
-  <div class="topstats">
-    <div><small>MISSION CLOCK</small><b id="clock">20:00</b></div>
-    <div><small>CURRENT RANK</small><b id="rank">CADET</b></div>
-    <div><small>MISSION STATUS</small><b id="status" class="amber">STANDBY</b></div>
-  </div>
-</header>
-
-<div class="shell">
-<aside>
-  <h3>MISSION FILE</h3>
-  <p class="muted">The Battalion Commander's computer has been locked by a rogue cyber protocol hours before the IG evaluation.</p>
-  <div class="divider"></div>
-  <h3>DIGITAL INVENTORY</h3>
-  <div id="inventory"><p class="muted">No assets recovered.</p></div>
-  <div class="divider"></div>
-  <h3>HINT REQUEST</h3>
-  <p class="muted">Each hint costs 60 seconds.</p>
-  <button id="hintBtn" class="outline">REQUEST INTEL</button>
-  <div id="hintBox" class="hint"></div>
-  <div class="divider"></div>
-  <h3>FIREWALLS</h3>
-  <div id="progress"></div>
-</aside>
-
-<main>
-<section id="briefing" class="panel">
-  <p class="eyebrow">FLASH // PRIORITY ONE</p>
-  <h1>OPERATION<br><span>BROKEN CHAIN</span></h1>
-  <p class="lead">A rogue protocol has severed the battalion's digital chain of command. Restore the command network before the Inspector General team arrives.</p>
-  <div class="briefgrid">
-    <div><small>TIME LIMIT</small><strong>20 MINUTES</strong></div>
-    <div><small>OBJECTIVE</small><strong>5 FIREWALLS</strong></div>
-    <div><small>FAILURE CONDITION</small><strong>LOCKOUT</strong></div>
-  </div>
-  <label>CADET / TEAM CALLSIGN<input id="callsign" placeholder="Enter callsign"></label>
-  <label>MISSION PATH<select id="path"><option value="3">LET 3 // Tactical Leadership</option><option value="4">LET 4 // Senior Leadership</option></select></label>
-  <button id="startBtn">INITIATE MISSION</button>
-</section>
-
-<section id="ops" class="panel hidden">
-  <div class="missionhead"><div><p id="moduleTag" class="eyebrow"></p><h2 id="moduleTitle"></h2></div><div id="moduleState" class="chip">LOCKED</div></div>
-  <p id="moduleBrief" class="lead small"></p>
-  <div id="puzzle"></div>
-  <div id="feedback"></div>
-</section>
-
-<section id="complete" class="panel hidden">
-  <p class="eyebrow">COMMAND NETWORK RESTORED</p>
-  <h1>MISSION <span>COMPLETE</span></h1>
-  <div id="aar"></div>
-  <button onclick="location.reload()">NEW MISSION</button>
-</section>
-
-<section id="failed" class="panel hidden">
-  <p class="eyebrow">SYSTEM LOCKOUT</p><h1>MISSION <span>FAILED</span></h1>
-  <p class="lead">The 20-minute mission window expired before the command bypass was restored.</p>
-  <button onclick="location.reload()">RESTART MISSION</button>
-</section>
-</main>
-</div>
-<script src="script.js"></script>
-</body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Operation Future Ready | Callaway JROTC</title><link rel="stylesheet" href="style.css"></head><body>
+<header class="topbar"><div class="brand"><span class="shield">4</span><div><strong>CALLAWAY JROTC</strong><small>4th Battalion • Future Readiness Operations Center</small></div></div><div class="hud"><div><small>MISSION CLOCK</small><b id="clock">35:00</b></div><div><small>READINESS SCORE</small><b id="score">3000</b></div><div><small>STATUS</small><b id="status">STANDBY</b></div></div></header>
+<div class="app"><aside class="sidebar"><h3>MISSION</h3><p class="muted">Recover the encrypted <b>Future Readiness Briefing</b>.</p><div class="rule"></div><h3>SECURE INVENTORY</h3><div id="inventory"></div><div class="rule"></div><h3>ROOM STATUS</h3><div id="roomStatus"></div><div class="rule"></div><h3>INTEL REQUEST</h3><p class="muted">Each hint costs 45 seconds.</p><button id="hintBtn" class="outline">REQUEST HINT</button><div id="hintBox" class="hint"></div></aside>
+<main><section id="start" class="panel active"><p class="eyebrow">CLASSIFIED // FUTURE READINESS</p><h1>OPERATION<br><span>FUTURE READY</span></h1><p class="lead">Six progressively harder locks protect the battalion's Future Readiness Briefing. Use Army Values, Cadet Creed knowledge, college planning, personal finance, leadership judgment, and three logic riddles to recover it.</p><div class="missioncards"><div><small>ROOMS</small><b>6</b></div><div><small>TIME</small><b>35 MIN</b></div><div><small>DIFFICULTY</small><b>PROGRESSIVE</b></div></div><label>CADET / TEAM CALLSIGN<input id="callsign" placeholder="Enter callsign"></label><button id="startBtn">BEGIN OPERATION</button></section>
+<section id="game" class="panel"><div class="roomhead"><div><p id="roomTag" class="eyebrow"></p><h2 id="roomTitle"></h2></div><span id="difficulty" class="difficulty"></span></div><p id="roomBrief" class="lead small"></p><div id="work"></div><div id="feedback"></div></section>
+<section id="complete" class="panel"><p class="eyebrow">ACCESS GRANTED</p><h1>FUTURE READINESS<br><span>BRIEFING RECOVERED</span></h1><div class="briefingRecovered"><h3>KNOW YOUR VALUES</h3><h3>KNOW YOUR OPTIONS</h3><h3>KNOW YOUR MONEY</h3><h3>KNOW YOURSELF</h3><h3>MAKE THE DECISION</h3><h3>OWN THE OUTCOME</h3></div><div id="aar"></div><button onclick="location.reload()">RUN ANOTHER TEAM</button></section>
+<section id="failed" class="panel"><p class="eyebrow">MISSION WINDOW CLOSED</p><h1>BRIEFING <span>LOCKED</span></h1><p class="lead">The countdown expired before all six readiness locks were cleared.</p><button onclick="location.reload()">RESTART OPERATION</button></section></main></div><script src="script.js"></script></body></html>
