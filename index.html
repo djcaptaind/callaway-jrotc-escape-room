@@ -1,7 +1,83 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Operation Future Ready V7.1 | Callaway JROTC</title><link rel="stylesheet" href="style.css"></head><body>
-<header class="topbar"><div class="brand"><span class="shield">4</span><div><strong>CALLAWAY JROTC</strong><small>4th Battalion • Future Readiness Operations Center</small></div></div><div class="hud"><div><small>MISSION CLOCK</small><b id="clock">35:00</b></div><div><small>READINESS SCORE</small><b id="score">3000</b></div><div><small>STATUS</small><b id="status">STANDBY</b></div></div></header>
-<div class="app"><aside class="sidebar"><h3>MISSION</h3><p class="muted">Recover the encrypted <b>Future Readiness Briefing</b>.</p><div class="rule"></div><h3>SECURE INVENTORY</h3><div id="inventory"></div><div class="rule"></div><h3>ROOM STATUS</h3><div id="roomStatus"></div><div class="rule"></div><h3>AUDIO SYSTEM</h3><button id="soundBtn" class="outline" type="button">SOUND: ON</button><p class="muted">Wrong answer, room unlock, hint, and final recovery each have a different sound.</p><div class="rule"></div><h3>INTEL REQUEST</h3><p class="muted">Each hint costs 45 seconds.</p><button id="hintBtn" class="outline">REQUEST HINT</button><div id="hintBox" class="hint"></div></aside>
-<main><section id="start" class="panel active"><p class="eyebrow">CLASSIFIED // FUTURE READINESS</p><h1>OPERATION<br><span>FUTURE READY</span></h1><p class="lead">Six progressively harder locks protect the battalion's Future Readiness Briefing. Use Army Values, Cadet Creed knowledge, college planning, personal finance, leadership judgment, and three logic riddles to recover it.</p><div class="missioncards"><div><small>ROOMS</small><b>6</b></div><div><small>TIME</small><b>35 MIN</b></div><div><small>DIFFICULTY</small><b>PROGRESSIVE</b></div></div><label>CADET / TEAM CALLSIGN<input id="callsign" placeholder="Enter callsign"></label><button id="startBtn">BEGIN OPERATION</button></section>
-<section id="game" class="panel"><div class="roomhead"><div><p id="roomTag" class="eyebrow"></p><h2 id="roomTitle"></h2></div><span id="difficulty" class="difficulty"></span></div><p id="roomBrief" class="lead small"></p><div id="work"></div><div id="feedback"></div></section>
-<section id="complete" class="panel"><p class="eyebrow">ACCESS GRANTED</p><h1>FUTURE READINESS<br><span>BRIEFING RECOVERED</span></h1><div class="briefingRecovered"><h3>KNOW YOUR VALUES</h3><h3>KNOW YOUR OPTIONS</h3><h3>KNOW YOUR MONEY</h3><h3>KNOW YOURSELF</h3><h3>MAKE THE DECISION</h3><h3>OWN THE OUTCOME</h3></div><div id="aar"></div><button onclick="location.reload()">RUN ANOTHER TEAM</button></section>
-<section id="failed" class="panel"><p class="eyebrow">MISSION WINDOW CLOSED</p><h1>BRIEFING <span>LOCKED</span></h1><p class="lead">The countdown expired before all six readiness locks were cleared.</p><button onclick="location.reload()">RESTART OPERATION</button></section></main></div><script src="script.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Operation Future Ready — Version B Updated | Callaway JROTC</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand"><span class="shield">4</span><div><b>CALLAWAY JROTC</b><small>Future Readiness Operations Center • VERSION B UPDATED</small></div></div>
+  <div class="hud">
+    <div><small>MISSION CLOCK</small><b id="clock">35:00</b></div>
+    <div><small>SCORE</small><b id="score">3000</b></div>
+    <div><small>STATUS</small><b id="status">STANDBY</b></div>
+  </div>
+</header>
+
+<div class="layout">
+<aside>
+  <h3>MISSION FILE</h3>
+  <p class="muted">A backup Future Readiness Briefing has been encrypted. Recover it using a different set of readiness challenges.</p>
+  <div class="rule"></div>
+  <h3>SECURE INVENTORY</h3>
+  <div id="inventory"><p class="muted">No keys recovered.</p></div>
+  <div class="rule"></div>
+  <h3>ROOM STATUS</h3>
+  <div id="roomStatus"></div>
+  <div class="rule"></div>
+  <h3>AUDIO</h3>
+  <button id="soundBtn" class="outline" type="button">SOUND: ON</button>
+  <div class="rule"></div>
+  <h3>INTEL REQUEST</h3>
+  <p class="muted">Hint costs 45 seconds.</p>
+  <button id="hintBtn" class="outline" type="button">REQUEST HINT</button>
+  <div id="hintBox" class="hint"></div>
+</aside>
+
+<main>
+<section id="start" class="panel active">
+  <p class="eyebrow">ALTERNATE MISSION // VERSION B</p>
+  <h1>OPERATION<br><span>FUTURE READY</span></h1>
+  <p class="lead">Same readiness goals. Different puzzles, different scenarios, different extraction code.</p>
+  <div class="cards">
+    <div><small>ROOMS</small><b>6</b></div>
+    <div><small>TIME</small><b>35 MIN</b></div>
+    <div><small>PATHS</small><b>LET 3 / LET 4</b></div>
+  </div>
+  <label>CADET / TEAM CALLSIGN<input id="callsign" placeholder="Enter callsign"></label>
+  <label>MISSION PATH<select id="level"><option value="3">LET 3 — Applied Leadership</option><option value="4">LET 4 — Senior Leadership</option></select></label>
+  <button id="startBtn" type="button">BEGIN VERSION B</button>
+</section>
+
+<section id="game" class="panel">
+  <div class="roomhead">
+    <div><p id="roomTag" class="eyebrow"></p><h2 id="roomTitle"></h2></div>
+    <span id="difficulty"></span>
+  </div>
+  <p id="roomBrief" class="lead small"></p>
+  <div id="work"></div>
+  <div id="feedback"></div>
+</section>
+
+<section id="complete" class="panel">
+  <p class="eyebrow">EXTRACTION COMPLETE</p>
+  <h1>FUTURE READINESS<br><span>BRIEFING RECOVERED</span></h1>
+  <div class="motto">
+    <div>VALUES</div><div>OPTIONS</div><div>MONEY</div><div>JUDGMENT</div>
+  </div>
+  <div id="aar"></div>
+  <button type="button" onclick="location.reload()">RUN ANOTHER TEAM</button>
+</section>
+
+<section id="failed" class="panel">
+  <p class="eyebrow">TIME EXPIRED</p>
+  <h1>MISSION <span>LOCKED</span></h1>
+  <button type="button" onclick="location.reload()">RESTART</button>
+</section>
+</main>
+</div>
+<script src="script.js"></script>
+</body>
+</html>

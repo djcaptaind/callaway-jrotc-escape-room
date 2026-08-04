@@ -1,110 +1,159 @@
+
 const $=s=>document.querySelector(s);
-const rooms=[
-{title:"ARMY VALUES // LDRSHIP CIPHER",stars:1,brief:"Match seven situations to the strongest Army Value, then solve the first logic riddle.",hint:"Separate Integrity, Honor, Duty, Selfless Service, and Personal Courage by asking what the situation is really testing."},
-{title:"CADET CREED // BROKEN TRANSMISSION",stars:2,brief:"Restore missing Creed words and rebuild the Creed sequence.",hint:"Think identity → conduct → loyalty/patriotism → accountability → self-development → leadership → Constitution."},
-{title:"COLLEGE PATHWAYS // DESTINATION UNKNOWN",stars:3,brief:"Match four cadets to realistic postsecondary pathways based on career goals, cost, grades, and learning preferences.",hint:"The best pathway is the one that fits the career requirement and the student's circumstances—not simply the most prestigious option."},
-{title:"PERSONAL FINANCE // THE $1,850 PROBLEM",stars:4,brief:"Classify expenses, build savings, and solve a credit decision without confusing available credit with available money.",hint:"Pay yourself first means intentionally fund savings before discretionary spending."},
-{title:"LEADERSHIP DECISION // THREE ACCEPTANCE LETTERS",stars:5,brief:"Choose a college option using structured decision factors, then respond when new information changes the problem.",hint:"Use cost, career fit, opportunity, values, debt, and long-term consequences. Strong leadership can adapt when the facts change."},
-{title:"FINAL EXTRACTION // RECOVER THE BRIEFING",stars:6,brief:"Use every recovered key and all three riddle tokens to restore the Future Readiness Briefing.",hint:"Build the future in this order: VALUES → PATHWAY → MONEY → DECISION. Then follow the terminal rule exactly."}
+const ROOMNAMES=["VALUES LOCK","CREED VAULT","PATHWAY MATRIX","MONEY LAB","LEADERSHIP CROSSROADS","FINAL EXTRACTION"];
+const hints=[
+"Army Values may overlap. Choose the value MOST directly tested by the action.",
+"The Creed challenge uses exact meaning and sequence, not the founding year.",
+"Career goal + required training + affordability should drive pathway decisions.",
+"Available credit is debt capacity, not income. Protect savings before wants.",
+"For senior leaders, a good choice balances career fit, cost, values, and long-term options.",
+"The final code uses every recovered key in room order, then the two riddle tokens."
 ];
-let room=0,score=3000,time=2100,timer=null,inventory=[],hints=0,callsign="",riddleTokens=[],log=[];
-let soundOn=true,audioCtx=null;
-function audio(){if(!soundOn)return null;if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==="suspended")audioCtx.resume();return audioCtx}
-function tone(freq,dur,type="sine",vol=.07,delay=0){const ctx=audio();if(!ctx)return;const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.value=freq;g.gain.value=vol;o.connect(g);g.connect(ctx.destination);const st=ctx.currentTime+delay;g.gain.setValueAtTime(vol,st);g.gain.exponentialRampToValueAtTime(.001,st+dur);o.start(st);o.stop(st+dur)}
-function sfx(kind){if(!soundOn)return;if(kind==="wrong"){tone(185,.14,"square",.06);tone(115,.2,"square",.05,.12)}if(kind==="unlock"){tone(440,.11,"sine",.05);tone(660,.13,"sine",.06,.10);tone(880,.18,"sine",.07,.21)}if(kind==="success"){tone(523,.14,"triangle",.05);tone(659,.14,"triangle",.05,.13);tone(784,.17,"triangle",.06,.26);tone(1047,.28,"triangle",.07,.40)}if(kind==="hint"){tone(320,.08,"sine",.04);tone(460,.10,"sine",.04,.08)}document.querySelector("main .panel.active")?.classList.add("audioPulse");setTimeout(()=>document.querySelector("main .panel.active")?.classList.remove("audioPulse"),380)}
+
+let level="3",room=0,score=3000,time=2100,timer=null,inventory=[],tokens=[],soundOn=true,audioCtx=null,callsign="";
 
 function screen(id){["start","game","complete","failed"].forEach(x=>$("#"+x).classList.remove("active"));$("#"+id).classList.add("active")}
 function fmt(s){return Math.floor(Math.max(0,s)/60)+":"+String(Math.max(0,s)%60).padStart(2,"0")}
-function hud(){$("#clock").textContent=fmt(time);$("#score").textContent=score;$("#status").textContent=room>=6?"RECOVERED":room>0?"ACTIVE":"STANDBY";statusRows()}
-function statusRows(){$("#roomStatus").innerHTML=rooms.map((x,i)=>`<div class="statusRow ${i<room?"done":i===room?"current":""}">${i<room?"✓":"▸"} ROOM ${i+1} // ${x.title.split("//")[0].trim()}</div>`).join("")}
+function hud(){$("#clock").textContent=fmt(time);$("#score").textContent=score;$("#status").textContent=room>=6?"RECOVERED":room>0?"ACTIVE":"STANDBY";$("#roomStatus").innerHTML=ROOMNAMES.map((n,i)=>`<div class="statusRow ${i<room?"done":i===room?"current":""}">${i<room?"✓":"▸"} ROOM ${i+1} // ${n}</div>`).join("")}
 function inv(){$("#inventory").innerHTML=inventory.length?inventory.map(x=>`<div class="asset">${x}</div>`).join(""):`<p class="muted">No keys recovered.</p>`}
 function fb(msg,kind=""){$("#feedback").className="feedback "+kind;$("#feedback").innerHTML=msg}
-function penalty(points,msg){sfx("wrong");score=Math.max(0,score-points);hud();fb(msg+` • −${points} points`,"warn")}
-function completeRoom(asset,summary){inventory.push(asset);inv();log.push(`Room ${room+1}: ${summary}`);sfx(room===5?"success":"unlock");fb(`<b>ROOM CLEARED.</b><br>${asset}`);room++;hud();$("#hintBox").textContent="";setTimeout(()=>room>=6?finish():render(),700)}
+function audio(){if(!soundOn)return null;if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==="suspended")audioCtx.resume();return audioCtx}
+function tone(f,d,type="sine",v=.06,delay=0){let c=audio();if(!c)return;let o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(c.destination);let s=c.currentTime+delay;g.gain.setValueAtTime(v,s);g.gain.exponentialRampToValueAtTime(.001,s+d);o.start(s);o.stop(s+d)}
+function sfx(k){if(k==="wrong"){tone(180,.14,"square",.06);tone(120,.2,"square",.05,.1)}if(k==="unlock"){tone(440,.1);tone(660,.12,"sine",.06,.1);tone(880,.16,"sine",.07,.22)}if(k==="final"){tone(523,.15,"triangle");tone(659,.15,"triangle",.06,.14);tone(784,.17,"triangle",.06,.28);tone(1047,.28,"triangle",.07,.43)}if(k==="hint"){tone(300,.08,"sine",.04);tone(420,.1,"sine",.04,.08)}}
+function penalty(p,msg){sfx("wrong");score=Math.max(0,score-p);hud();fb(msg+` • −${p} points`,"warn")}
+function clearRoom(asset){inventory.push(asset);inv();sfx(room===5?"final":"unlock");fb(`<b>ROOM UNLOCKED</b><br>${asset}`);room++;hud();$("#hintBox").textContent="";setTimeout(()=>room>=6?finish():render(),700)}
 
-$("#startBtn").onclick=()=>{callsign=$("#callsign").value.trim();if(!callsign)return alert("Enter a cadet or team callsign.");screen("game");render();timer=setInterval(()=>{time--;hud();if(time<=0){clearInterval(timer);screen("failed")}},1000)}
-$("#hintBtn").onclick=()=>{if(room>=6)return;sfx("hint");time=Math.max(0,time-45);hints++;$("#hintBox").textContent="INTEL: "+rooms[room].hint;hud()}
-$("#soundBtn").onclick=()=>{soundOn=!soundOn;$("#soundBtn").textContent="SOUND: "+(soundOn?"ON":"OFF");if(soundOn){audio();tone(520,.08,"sine",.04);tone(720,.1,"sine",.04,.08)}}
+$("#startBtn").onclick=()=>{callsign=$("#callsign").value.trim();if(!callsign)return alert("Enter a callsign.");level=$("#level").value;screen("game");render();timer=setInterval(()=>{time--;hud();if(time<=0){clearInterval(timer);screen("failed")}},1000)}
+$("#hintBtn").onclick=()=>{if(room>=6)return;sfx("hint");time=Math.max(0,time-45);$("#hintBox").textContent="INTEL: "+hints[room];hud()}
+$("#soundBtn").onclick=()=>{soundOn=!soundOn;$("#soundBtn").textContent="SOUND: "+(soundOn?"ON":"OFF");if(soundOn){audio();tone(600,.08)}}
 
-function render(){hud();$("#feedback").className="";$("#feedback").innerHTML="";$("#roomTag").textContent=`ROOM ${room+1} OF 6`;$("#roomTitle").textContent=rooms[room].title;$("#roomBrief").textContent=rooms[room].brief;$("#difficulty").textContent="DIFFICULTY "+"★".repeat(rooms[room].stars)+"☆".repeat(6-rooms[room].stars);[army,creed,pathways,finance,leadership,finalRoom][room]()}
+function render(){hud();$("#feedback").className="";$("#feedback").innerHTML="";$("#roomTag").textContent=`ROOM ${room+1} OF 6 // LET ${level}`;$("#roomTitle").textContent=ROOMNAMES[room];$("#difficulty").textContent="DIFFICULTY "+"★".repeat(room+1)+"☆".repeat(5-room);$("#roomBrief").textContent=[
+"Apply Army Values to new situations, then solve the first logic riddle.",
+"Prove Creed knowledge through meaning and sequence—without using a history-year question.",
+"Match realistic cadets to viable college, ROTC, technical, or transfer pathways.",
+"Repair a student budget, identify credit risk, and protect savings.",
+"Make a values-based college decision using structured tradeoffs—no written defense.",
+"Combine all recovered keys and riddle tokens to recover the alternate briefing."
+][room];[valuesRoom,creedRoom,pathwayRoom,financeRoom,leadershipRoom,finalRoom][room]()}
 
-function army(){
- const values=["Loyalty","Duty","Respect","Selfless Service","Honor","Integrity","Personal Courage"];
- const items=[
- ["You discover your best friend changed an accountability number so nobody will know the team made a mistake.","Integrity"],
- ["You complete an assigned responsibility even when nobody reminds you.","Duty"],
- ["You disagree with a cadet but still listen without humiliating them.","Respect"],
- ["You stay late to help the team prepare even though you receive no recognition.","Selfless Service"],
- ["You support the team while refusing to cover up wrongdoing.","Loyalty"],
- ["You choose the morally right course even though it may cost you socially.","Honor"],
- ["You report a serious problem even though you are nervous about the reaction.","Personal Courage"]];
- let p=$("#work");p.innerHTML=`<div class="taskbox"><h3>PHASE 1 // VALUE MATCH</h3><p class="instruction">Match each situation to its strongest controlling Army Value.</p><div id="valueRows"></div><button id="valueCheck">VERIFY LDRSHIP</button></div><div id="armyRiddle"></div>`;
- let ans=Array(items.length).fill("");
- items.forEach((it,i)=>{let row=document.createElement("div");row.className="valueGrid";row.innerHTML=`<span>${it[0]}</span>`;let s=document.createElement("select");s.innerHTML=`<option value="">SELECT VALUE</option>`+values.map(v=>`<option>${v}</option>`).join("");s.onchange=()=>ans[i]=s.value;row.appendChild(s);$("#valueRows").appendChild(row)});
- $("#valueCheck").onclick=()=>{if(ans.some(x=>!x))return fb("Complete all seven value matches.","warn");let n=ans.filter((x,i)=>x===items[i][1]).length;if(n<7)return penalty((7-n)*35,`${n}/7 values correct. Recheck the controlling value`);$("#armyRiddle").innerHTML=`<div class="taskbox"><h3>PHASE 2 // RIDDLE TOKEN</h3><div class="riddle">I am an odd number. Take away one letter and I become even. What number am I?</div><input id="r1"><button id="r1b">UNLOCK RIDDLE</button></div>`;$("#r1b").onclick=()=>{if($("#r1").value.trim().toLowerCase()!=="seven")return penalty(45,"Riddle answer rejected");riddleTokens.push("7");completeRoom("ARMY KEY // LDRSHIP • RIDDLE TOKEN // 7","Army Values cipher verified")}}
-}
-function creed(){
- const blanks=[["I am an Army Junior ROTC ______.","cadet"],["I do not lie, cheat or steal and will always be ______ for my actions and deeds.","accountable"],["I will seek the mantle of ______ and stand prepared to uphold the Constitution and the American way of life.","leadership"]];
- let mixed=["I am an Army Junior ROTC Cadet.","I am loyal and patriotic.","I do not lie, cheat or steal and will always be accountable for my actions and deeds.","I will work hard to improve my mind and strengthen my body.","I will seek the mantle of leadership and stand prepared to uphold the Constitution and the American way of life.","May God grant me the strength to always live by this creed."];
- const correct=[...mixed];mixed.sort(()=>Math.random()-.5);
- $("#work").innerHTML=`<div class="taskbox"><h3>PHASE 1 // MISSING CREED WORDS</h3><div id="blanks"></div><button id="blankCheck">VERIFY WORDS</button></div><div id="orderBox" class="taskbox" style="display:none"><h3>PHASE 2 // RECONSTRUCT SEQUENCE</h3><div id="sortCreed"></div><button id="orderCheck">VERIFY SEQUENCE</button></div>`;
- blanks.forEach((b,i)=>$("#blanks").innerHTML+=`<label>${b[0]}<input id="cb${i}"></label>`);
- $("#blankCheck").onclick=()=>{let ok=blanks.every((b,i)=>$("#cb"+i).value.trim().toLowerCase()===b[1]);if(!ok)return penalty(55,"One or more Creed words are incorrect");$("#orderBox").style.display="block";draw()};
- function draw(){let s=$("#sortCreed");s.innerHTML="";mixed.forEach((x,i)=>{let d=document.createElement("div");d.className="sortitem";d.innerHTML=`<span>${x}</span><div><button data-u="${i}">▲</button><button data-d="${i}">▼</button></div>`;s.appendChild(d)});s.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>{let i=+b.dataset.u;if(i){[mixed[i-1],mixed[i]]=[mixed[i],mixed[i-1]];draw()}});s.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{let i=+b.dataset.d;if(i<mixed.length-1){[mixed[i+1],mixed[i]]=[mixed[i],mixed[i+1]];draw()}})}
- $("#orderCheck").onclick=()=>{if(JSON.stringify(mixed)!==JSON.stringify(correct))return penalty(70,"Creed sequence rejected");completeRoom("CADET KEY // CREED","Cadet Creed transmission reconstructed")}
-}
-function pathways(){
- const profiles=[
- {n:"Jasmine",d:"3.7 GPA • wants nursing • limited family money • wants to remain reasonably close to home",best:"Community college → transfer"},
- {n:"Marcus",d:"2.5 GPA • strong hands-on electrical aptitude • wants to earn sooner • dislikes traditional four-year classroom structure",best:"Technical / apprenticeship pathway"},
- {n:"Aaliyah",d:"3.9 GPA • strong leader • interested in public service • wants help paying for college",best:"Four-year college + ROTC"},
- {n:"DeAndre",d:"Undecided major • wants low-cost exploration • wants the option to transfer later",best:"Community college → transfer"}];
- const opts=["Four-year college only","Community college → transfer","Technical / apprenticeship pathway","Four-year college + ROTC","Immediate workforce with no training"];
- $("#work").innerHTML=`<div class="taskbox"><h3>PHASE 1 // PROFILE MATCH</h3><div id="profiles"></div><button id="pathCheck">VERIFY PATHWAYS</button></div><div id="pathRiddle"></div>`;
- let a=Array(4).fill("");profiles.forEach((x,i)=>{let d=document.createElement("div");d.className="profile";d.innerHTML=`<b>${x.n}</b><p>${x.d}</p>`;let s=document.createElement("select");s.innerHTML=`<option value="">SELECT PATHWAY</option>`+opts.map(o=>`<option>${o}</option>`).join("");s.onchange=()=>a[i]=s.value;d.appendChild(s);$("#profiles").appendChild(d)});
- $("#pathCheck").onclick=()=>{if(a.some(x=>!x))return fb("Choose a pathway for every cadet.","warn");let n=a.filter((x,i)=>x===profiles[i].best).length;if(n<4)return penalty((4-n)*65,`${n}/4 pathway matches aligned`);$("#pathRiddle").innerHTML=`<div class="taskbox"><h3>MENTAL BREAK // RIDDLE TOKEN 2</h3><div class="riddle">What goes up but never comes down?</div><input id="r2"><button id="r2b">UNLOCK TOKEN</button></div>`;$("#r2b").onclick=()=>{let v=$("#r2").value.trim().toLowerCase();if(!["age","your age","my age"].includes(v))return penalty(45,"Riddle answer rejected");riddleTokens.push("A");completeRoom("PATHWAY KEY // PATH • RIDDLE TOKEN // A","Four realistic pathways evaluated")}}
+function valuesRoom(){
+ const vals=["Loyalty","Duty","Respect","Selfless Service","Honor","Integrity","Personal Courage"];
+ const data=level==="3"?[
+ ["You tell the truth about a mistake even though nobody saw it.","Integrity"],
+ ["You finish an assigned job before leaving practice.","Duty"],
+ ["You listen to a cadet you strongly disagree with.","Respect"],
+ ["You help a teammate prepare instead of taking the easy early dismissal.","Selfless Service"],
+ ["You refuse to join friends who want to embarrass another cadet.","Honor"],
+ ["You support your unit while still reporting a serious problem.","Loyalty"],
+ ["You speak up when doing so may make you unpopular.","Personal Courage"]
+ ]:[
+ ["A senior cadet asks you to quietly alter a report to protect the unit's image.","Integrity"],
+ ["You enforce a standard even when the high performer involved is your friend.","Duty"],
+ ["You correct a subordinate privately instead of humiliating them publicly.","Respect"],
+ ["You give scarce preparation time to the team member who needs it most.","Selfless Service"],
+ ["You choose a course that protects institutional trust even though it costs you personally.","Honor"],
+ ["You remain committed to the organization without confusing loyalty with covering misconduct.","Loyalty"],
+ ["You challenge an unsafe decision through the proper channel despite pressure to stay quiet.","Personal Courage"]
+ ];
+ $("#work").innerHTML=`<div class="task"><h3>PHASE 1 // LDRSHIP MATCH</h3><div id="vrows"></div><button id="vcheck">VERIFY VALUES</button></div><div id="riddle1"></div>`;
+ let a=Array(data.length).fill("");
+ data.forEach((x,i)=>{let row=document.createElement("div");row.className="matchrow";row.innerHTML=`<span>${x[0]}</span>`;let s=document.createElement("select");s.innerHTML=`<option value="">SELECT</option>`+vals.map(v=>`<option>${v}</option>`).join("");s.onchange=()=>a[i]=s.value;row.appendChild(s);$("#vrows").appendChild(row)});
+ $("#vcheck").onclick=()=>{if(a.some(x=>!x))return fb("Complete all value matches.","warn");let n=a.filter((x,i)=>x===data[i][1]).length;if(n<data.length)return penalty((data.length-n)*35,`${n}/${data.length} correct`);$("#riddle1").innerHTML=`<div class="task"><h3>RIDDLE TOKEN 1</h3><div class="riddle">There are seven apples and you take away three of them. How many apples do you have?</div><input id="rr1"><button id="rr1b">UNLOCK</button></div>`;$("#rr1b").onclick=()=>{let v=$("#rr1").value.trim().toLowerCase();if(!["3","three"].includes(v))return penalty(45,"Riddle rejected");tokens.push("3");clearRoom("VALUES KEY // LDRSHIP • TOKEN // 3")}}
 }
 
-function finance(){
- const expenses=[["Rent",650,"NEED"],["Utilities",110,"NEED"],["Groceries",260,"NEED"],["Car insurance",180,"NEED"],["Gas for work/school",150,"NEED"],["Phone",85,"DEPENDS"],["Streaming services",64,"WANT"],["Restaurants",210,"WANT"],["Sneakers",170,"WANT"]];
- $("#work").innerHTML=`<div class="taskbox"><h3>PHASE 1 // NEED, WANT, OR DEPENDS?</h3><div id="finClass"></div><button id="finClassBtn">VERIFY CLASSIFICATION</button></div><div id="budgetPhase"></div>`;
- let a=Array(expenses.length).fill(null);expenses.forEach((x,i)=>{let row=document.createElement("div");row.className="classifyRow";row.innerHTML=`<span>${x[0]} <span class="money">$${x[1]}</span></span>`;["NEED","WANT","DEPENDS"].forEach(c=>{let b=document.createElement("button");b.textContent=c;b.onclick=()=>{a[i]=c;row.querySelectorAll("button").forEach(q=>q.classList.remove("selected"));b.classList.add("selected")};row.appendChild(b)});$("#finClass").appendChild(row)});
- $("#finClassBtn").onclick=()=>{if(a.some(x=>x===null))return fb("Classify every expense.","warn");let n=a.filter((x,i)=>x===expenses[i][2]).length;if(n<8)return penalty((9-n)*45,`${n}/9 classifications acceptable`);budget()};
+function creedRoom(){
+ const phrases=level==="3"?[
+ ["I am an Army Junior ROTC Cadet.","IDENTITY"],
+ ["I do not lie, cheat or steal...","ACCOUNTABILITY"],
+ ["I will work hard to improve my mind and strengthen my body.","SELF-DEVELOPMENT"],
+ ["I will seek the mantle of leadership...","LEADERSHIP"]
+ ]:[
+ ["I will always conduct myself to bring credit...","CHARACTER / CONDUCT"],
+ ["I am loyal and patriotic.","LOYALTY / PATRIOTISM"],
+ ["I do not lie, cheat or steal...","ACCOUNTABILITY"],
+ ["I will seek the mantle of leadership and stand prepared to uphold the Constitution...","LEADERSHIP / CONSTITUTION"]
+ ];
+ const opts=[...new Set(phrases.map(x=>x[1]))];
+ let seq=level==="3"?["I am an Army Junior ROTC Cadet.","I am loyal and patriotic.","I do not lie, cheat or steal and will always be accountable for my actions and deeds.","I will work hard to improve my mind and strengthen my body.","I will seek the mantle of leadership and stand prepared to uphold the Constitution and the American way of life."]:
+ ["I am an Army Junior ROTC Cadet.","I will always conduct myself to bring credit to my family, country, school and the Corps of Cadets.","I am loyal and patriotic.","I do not lie, cheat or steal and will always be accountable for my actions and deeds.","I will seek the mantle of leadership and stand prepared to uphold the Constitution and the American way of life."];
+ const correct=[...seq];seq.sort(()=>Math.random()-.5);
+ $("#work").innerHTML=`<div class="task"><h3>PHASE 1 // CREED MEANING</h3><div id="crows"></div><button id="ccheck">VERIFY MEANING</button></div><div id="corder" class="task" style="display:none"><h3>PHASE 2 // CREED SEQUENCE</h3><div id="sortc"></div><button id="ocheck">VERIFY SEQUENCE</button></div>`;
+ let a=Array(phrases.length).fill("");
+ phrases.forEach((x,i)=>{let row=document.createElement("div");row.className="matchrow";row.innerHTML=`<span>${x[0]}</span>`;let s=document.createElement("select");s.innerHTML=`<option value="">SELECT MEANING</option>`+opts.map(o=>`<option>${o}</option>`).join("");s.onchange=()=>a[i]=s.value;row.appendChild(s);$("#crows").appendChild(row)});
+ $("#ccheck").onclick=()=>{if(a.some(x=>!x))return fb("Complete each Creed meaning.","warn");let n=a.filter((x,i)=>x===phrases[i][1]).length;if(n<phrases.length)return penalty((phrases.length-n)*50,`${n}/${phrases.length} Creed meanings correct`);$("#corder").style.display="block";draw()};
+ function draw(){let b=$("#sortc");b.innerHTML="";seq.forEach((x,i)=>{let d=document.createElement("div");d.className="sortitem";d.innerHTML=`<span>${x}</span><div><button data-u="${i}">▲</button><button data-d="${i}">▼</button></div>`;b.appendChild(d)});b.querySelectorAll("[data-u]").forEach(q=>q.onclick=()=>{let i=+q.dataset.u;if(i){[seq[i-1],seq[i]]=[seq[i],seq[i-1]];draw()}});b.querySelectorAll("[data-d]").forEach(q=>q.onclick=()=>{let i=+q.dataset.d;if(i<seq.length-1){[seq[i+1],seq[i]]=[seq[i],seq[i+1]];draw()}})}
+ $("#ocheck").onclick=()=>JSON.stringify(seq)===JSON.stringify(correct)?clearRoom("CREED KEY // HONOR"):penalty(70,"Creed sequence rejected")
+}
+
+function pathwayRoom(){
+ const profiles=level==="3"?[
+ ["Nia","3.6 GPA • wants teaching • wants a traditional campus • moderate financial need","Four-year university"],
+ ["Caleb","2.8 GPA • enjoys welding • wants a faster route into skilled work","Career/technical program"],
+ ["Tori","3.8 GPA • wants college + leadership training + possible scholarship support","Four-year college + ROTC"],
+ ["Jaylen","Undecided • wants lower cost first two years • wants transfer option","Community college → transfer"]
+ ]:[
+ ["Morgan","3.9 GPA • wants engineering • strong leadership record • willing to compete for scholarships","Four-year college + ROTC"],
+ ["Darius","2.7 GPA • wants cybersecurity • prefers certifications and hands-on learning • wants to work sooner","Career/technical program"],
+ ["Kayla","3.5 GPA • wants business • family obligations require staying close • wants lower first-year cost","Community college → transfer"],
+ ["Elijah","3.8 GPA • wants a bachelor's degree in biology • has strong academic aid package","Four-year university"]
+ ];
+ const opts=["Four-year university","Community college → transfer","Career/technical program","Four-year college + ROTC","Immediate workforce with no further training"];
+ $("#work").innerHTML=`<div class="task"><h3>PATHWAY MATRIX</h3><p>Choose the strongest realistic pathway for each cadet.</p><div id="profiles"></div><button id="pcheck">VERIFY MATRIX</button></div><div id="riddle2"></div>`;
+ let a=Array(4).fill("");
+ profiles.forEach((x,i)=>{let d=document.createElement("div");d.className="profile";d.innerHTML=`<b>${x[0]}</b><p>${x[1]}</p>`;let s=document.createElement("select");s.innerHTML=`<option value="">SELECT</option>`+opts.map(o=>`<option>${o}</option>`).join("");s.onchange=()=>a[i]=s.value;d.appendChild(s);$("#profiles").appendChild(d)});
+ $("#pcheck").onclick=()=>{if(a.some(x=>!x))return fb("Choose all four pathways.","warn");let n=a.filter((x,i)=>x===profiles[i][2]).length;if(n<4)return penalty((4-n)*65,`${n}/4 pathway matches correct`);$("#riddle2").innerHTML=`<div class="task"><h3>RIDDLE TOKEN 2</h3><div class="riddle">How many sides does a circle have?</div><input id="rr2"><button id="rr2b">UNLOCK</button></div>`;$("#rr2b").onclick=()=>{let v=$("#rr2").value.trim().toLowerCase();if(!["2","two"].includes(v))return penalty(45,"Riddle rejected");tokens.push("2");clearRoom("PATHWAY KEY // ROUTE • TOKEN // 2")}}
+}
+
+function financeRoom(){
+ const items=level==="3"?[
+ ["Rent","NEED"],["Groceries","NEED"],["Streaming service","WANT"],["New gaming headset","WANT"],["Phone plan","DEPENDS"],["Transportation to work/school","NEED"]
+ ]:[
+ ["Rent","NEED"],["Emergency fund contribution","NEED"],["Premium streaming bundle","WANT"],["Restaurant delivery three times a week","WANT"],["Phone plan","DEPENDS"],["Transportation to work/school","NEED"]
+ ];
+ $("#work").innerHTML=`<div class="task"><h3>PHASE 1 // NEED, WANT, DEPENDS</h3><div id="frows"></div><button id="fcheck">VERIFY</button></div><div id="budgetBox"></div>`;
+ let a=Array(items.length).fill(null);items.forEach((x,i)=>{let row=document.createElement("div");row.className="classrow";row.innerHTML=`<span>${x[0]}</span>`;let s=document.createElement("select");s.innerHTML=`<option value="">SELECT</option><option>NEED</option><option>WANT</option><option>DEPENDS</option>`;s.onchange=()=>a[i]=s.value;row.appendChild(s);$("#frows").appendChild(row)});
+ $("#fcheck").onclick=()=>{if(a.some(x=>!x))return fb("Classify every expense.","warn");let n=a.filter((x,i)=>x===items[i][1]).length;if(n<items.length)return penalty((items.length-n)*45,`${n}/${items.length} correct`);budget()};
  function budget(){
- $("#budgetPhase").innerHTML=`<div class="taskbox"><h3>PHASE 2 // CREATE $200 SAVINGS</h3><p class="instruction">Income is $1,850. Current spending is $1,879. Reduce adjustable expenses enough to erase the $29 deficit AND create at least $200 in savings.</p><table class="budgetTable"><tr><th>Item</th><th>Current</th><th>New</th></tr><tr><td>Phone</td><td>$85</td><td><input id="bp" type="number" value="85"></td></tr><tr><td>Streaming</td><td>$64</td><td><input id="bs" type="number" value="64"></td></tr><tr><td>Restaurants</td><td>$210</td><td><input id="br" type="number" value="210"></td></tr><tr><td>Sneakers</td><td>$170</td><td><input id="bsh" type="number" value="170"></td></tr></table><button id="budgetBtn">TEST BUDGET</button></div><div id="creditPhase"></div>`;
- $("#budgetBtn").onclick=()=>{let old=[85,64,210,170],ids=["#bp","#bs","#br","#bsh"];let nv=ids.map((id,i)=>Math.min(old[i],Math.max(0,+$(id).value||0)));let cuts=old.reduce((s,x,i)=>s+(x-nv[i]),0),savings=cuts-29;if(savings<200)return penalty(55,`Plan creates only $${Math.max(0,savings)} savings`);credit()};
+  const inc=level==="3"?1800:2250;
+  const fixed=level==="3"?1450:1785;
+  $("#budgetBox").innerHTML=`<div class="task"><h3>PHASE 2 // PAY YOURSELF FIRST</h3><p>Monthly income: <span class="money">$${inc}</span><br>Fixed needs: <span class="money">$${fixed}</span></p><p>You want at least <b>$200 saved first</b>. What is the MOST you should plan to spend on all remaining wants combined?</p><input id="budgetAns" type="number"><button id="budgetBtn">CHECK BUDGET</button></div><div id="creditBox"></div>`;
+  let answer=inc-fixed-200;
+  $("#budgetBtn").onclick=()=>+$("#budgetAns").value===answer?credit():penalty(60,"Budget amount rejected");
  }
  function credit(){
- $("#creditPhase").innerHTML=`<div class="taskbox"><h3>PHASE 3 // CREDIT IS NOT CASH</h3><p>Limit $1,000 • Balance $820 • Available credit $180 • Minimum payment $35. You want to charge $150 sneakers.</p><button class="option" id="ca">Charge them; available credit means you can afford them.</button><button class="option" id="cb">Do not treat available credit as available money; this adds debt to an already high balance.</button><button class="option" id="cc">Open another card.</button></div><div id="futurePhase"></div>`;
- $("#ca").onclick=()=>penalty(90,"Available credit is borrowing capacity, not affordability");$("#cc").onclick=()=>penalty(90,"A second card does not solve the affordability problem");
- $("#cb").onclick=()=>{$("#futurePhase").innerHTML=`<div class="taskbox"><h3>PHASE 4 // PAY YOURSELF FIRST</h3><div class="riddle">I am money you spend on someone you have not met yet. That person has your name, your birthday, and your dreams. Spend everything today and I disappear. Protect me first and tomorrow becomes easier. Who am I paying?</div><input id="fs"><button id="fsb">VERIFY</button></div>`;$("#fsb").onclick=()=>{let v=$("#fs").value.trim().toLowerCase();if(!["future self","my future self","your future self"].includes(v))return penalty(45,"Finance riddle rejected");completeRoom("FINANCE KEY // 200","Budget rebuilt, credit risk identified, future self funded")}}
+  let q=level==="3"?"Card limit $1,000; balance $760; you want to charge $200 sneakers.":"Card limit $1,500; balance $1,170; statement balance is carrying interest; you want to charge a $250 trip.";
+  $("#creditBox").innerHTML=`<div class="task"><h3>PHASE 3 // CREDIT DECISION</h3><p>${q}</p><button class="option" id="fa">Charge it because there is enough available credit.</button><button class="option" id="fb">Treat available credit as debt capacity, not spending money; protect cash flow and reduce the high balance first.</button><button class="option" id="fc">Open another card to create more room.</button></div>`;
+  $("#fa").onclick=()=>penalty(80,"Available credit does not prove affordability");$("#fc").onclick=()=>penalty(80,"More borrowing capacity does not fix the underlying balance");$("#fb").onclick=()=>clearRoom("FINANCE KEY // SAVE200");
  }
 }
 
-function leadership(){
- const colleges=[["UNIVERSITY A","Desired major • prestigious • $29,000/year net cost • farther from home"],["UNIVERSITY B","Strong desired program • $13,500/year net cost • ROTC available • closer to home"],["UNIVERSITY C","Full scholarship • friends attending • DOES NOT offer desired major"]];
- let choice=null,selectedReasons=[];
- $("#work").innerHTML=`<div class="taskbox"><h3>PHASE 1 // THREE ACCEPTANCE LETTERS</h3><p class="instruction">Select a school, then choose exactly TWO controlling factors that should drive the recommendation.</p><div id="collegeGrid" class="collegeGrid"></div><div id="reasonBox"></div><button id="leadBtn">LOCK INITIAL DECISION</button></div><div id="twist"></div>`;
- colleges.forEach((c,i)=>{let d=document.createElement("div");d.className="college";d.innerHTML=`<h3>${c[0]}</h3><p>${c[1]}</p><button>SELECT</button>`;d.querySelector("button").onclick=()=>{choice=i;selectedReasons=[];document.querySelectorAll(".college").forEach(x=>x.classList.remove("selected"));d.classList.add("selected");buildReasons()};$("#collegeGrid").appendChild(d)});
- function buildReasons(){const reasons=["Career/major fit","Total cost and likely debt","ROTC or leadership opportunity","Friends are attending","Prestige/name recognition only","Long-term flexibility"];$("#reasonBox").innerHTML="<h3>SELECT TWO CONTROLLING FACTORS</h3>";reasons.forEach((r,i)=>{let b=document.createElement("button");b.className="option";b.textContent=r;b.onclick=()=>{let at=selectedReasons.indexOf(i);if(at>=0){selectedReasons.splice(at,1);b.classList.remove("selected")}else if(selectedReasons.length<2){selectedReasons.push(i);b.classList.add("selected")}};$("#reasonBox").appendChild(b)})}
- $("#leadBtn").onclick=()=>{if(choice===null)return fb("Select a university.","warn");if(selectedReasons.length!==2)return fb("Select exactly two controlling factors.","warn");let weak=selectedReasons.filter(i=>[3,4].includes(i)).length;if(weak===2)return penalty(100,"The decision is controlled by social pressure/prestige rather than future-readiness factors");twist()};
- function twist(){$("#twist").innerHTML=`<div class="intelUpdate"><b>INTELLIGENCE UPDATE:</b> University B awards an additional $6,000/year scholarship, reducing net cost to $7,500.</div><div class="taskbox"><h3>PHASE 2 // ADAPT OR HOLD?</h3><button class="option" id="t1">Ignore it. Strong leaders never change their first decision.</button><button class="option" id="t2">Re-evaluate because cost materially changed while the desired program and ROTC opportunity remain.</button><button class="option" id="t3">Automatically choose University B only because it is cheaper.</button></div>`;$("#t1").onclick=()=>penalty(90,"Stubbornness is not the same as leadership");$("#t3").onclick=()=>penalty(90,"Price matters, but should not erase career fit and opportunity");$("#t2").onclick=()=>completeRoom("LEADERSHIP KEY // OWNIT","College decision re-evaluated when material information changed")}
+function leadershipRoom(){
+ const schools=level==="3"?[
+ ["COLLEGE A","Desired major • $21,000/year net cost • far from home"],
+ ["COLLEGE B","Desired major • $10,500/year net cost • smaller campus • internship partnership"],
+ ["COLLEGE C","Full scholarship • friends attending • does not offer desired major"]
+ ]:[
+ ["COLLEGE A","Top-ranked program • $26,000/year net cost • desired major"],
+ ["COLLEGE B","Strong program • $12,000/year net cost • ROTC + internship • desired major"],
+ ["COLLEGE C","Full scholarship • different major • family strongly prefers it"]
+ ];
+ let choice=null,reasons=[];
+ $("#work").innerHTML=`<div class="task"><h3>PHASE 1 // COLLEGE CHOICE</h3><div id="schools" class="grid3"></div><h3>SELECT TWO CONTROLLING FACTORS</h3><div id="reasons"></div><button id="lcheck">LOCK DECISION</button></div><div id="twist"></div>`;
+ schools.forEach((x,i)=>{let d=document.createElement("div");d.className="school";d.innerHTML=`<h3>${x[0]}</h3><p>${x[1]}</p><button>SELECT</button>`;d.querySelector("button").onclick=()=>{choice=i;document.querySelectorAll(".school").forEach(q=>q.classList.remove("selected"));d.classList.add("selected")};$("#schools").appendChild(d)});
+ let rs=["Career/major fit","Total cost/debt","Leadership/internship opportunity","Friends are attending","Prestige alone","Long-term flexibility"];
+ rs.forEach((r,i)=>{let b=document.createElement("button");b.className="option";b.textContent=r;b.onclick=()=>{let at=reasons.indexOf(i);if(at>=0){reasons.splice(at,1);b.classList.remove("selected")}else if(reasons.length<2){reasons.push(i);b.classList.add("selected")}};$("#reasons").appendChild(b)});
+ $("#lcheck").onclick=()=>{if(choice===null||reasons.length!==2)return fb("Select one college and exactly two controlling factors.","warn");if(reasons.every(i=>[3,4].includes(i)))return penalty(100,"Social pressure/prestige cannot be the only controlling factors");twist()};
+ function twist(){
+  let msg=level==="3"?"College B adds a $4,000 annual scholarship.":"College B adds a $6,500 annual scholarship and a paid sophomore internship.";
+  $("#twist").innerHTML=`<div class="task"><h3>PHASE 2 // NEW INFORMATION</h3><p><b>${msg}</b></p><p>Which response demonstrates the strongest leadership judgment?</p><button class="option" id="la">Ignore the update; leaders never change their first decision.</button><button class="option" id="lb">Re-evaluate because material cost/opportunity information changed while career fit remains strong.</button><button class="option" id="lc">Automatically choose the cheapest option without considering career fit.</button></div>`;
+  $("#la").onclick=()=>penalty(90,"Leadership is not stubbornness");$("#lc").onclick=()=>penalty(90,"Price is important but not the only factor");$("#lb").onclick=()=>clearRoom("LEADERSHIP KEY // ADAPT");
+ }
 }
+
 function finalRoom(){
- $("#work").innerHTML=`<div class="taskbox"><h3>CHECKPOINT // FINAL RIDDLE TOKEN</h3><div class="riddle">Two fathers and two sons go fishing. They catch three fish and each gets one. How is this possible?</div><input id="r3"><button id="r3b">VERIFY RIDDLE</button></div><div id="extract"></div>`;
- $("#r3b").onclick=()=>{let v=$("#r3").value.trim().toLowerCase();let ok=(v.includes("grandfather")&&v.includes("father")&&v.includes("son"))||v.includes("three people");if(!ok)return penalty(45,"Riddle explanation rejected");riddleTokens.push("3");sequence()};
- function sequence(){
- let items=["MONEY","VALUES","DECISION","PATHWAY"],correct=["VALUES","PATHWAY","MONEY","DECISION"];items.sort(()=>Math.random()-.5);
- $("#extract").innerHTML=`<div class="taskbox"><h3>PHASE 1 // BUILD THE FUTURE</h3><div class="riddle">A destination is useless without direction. Money without discipline disappears. A decision without character can betray the person making it. Arrange the four concepts in the order a future should be built.</div><div id="seq"></div><button id="seqCheck">VERIFY SEQUENCE</button></div><div id="codePhase"></div>`;
- function draw(){let s=$("#seq");s.innerHTML="";items.forEach((x,i)=>{let d=document.createElement("div");d.className="seqitem";d.innerHTML=`<span>${i+1}. ${x}</span><div><button data-u="${i}">▲</button><button data-d="${i}">▼</button></div>`;s.appendChild(d)});s.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>{let i=+b.dataset.u;if(i){[items[i-1],items[i]]=[items[i],items[i-1]];draw()}});s.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{let i=+b.dataset.d;if(i<items.length-1){[items[i+1],items[i]]=[items[i],items[i+1]];draw()}})}draw();
- $("#seqCheck").onclick=()=>{if(JSON.stringify(items)!==JSON.stringify(correct))return penalty(85,"Future-building sequence rejected");code()};
- }
- function code(){
- $("#codePhase").innerHTML=`<div class="taskbox"><h3>PHASE 2 // FINAL EXTRACTION TERMINAL</h3><div class="codebox">USE YOUR INVENTORY.<br><br>1. ARMY KEY<br>2. CADET KEY<br>3. PATHWAY KEY<br>4. FINANCE KEY<br>5. LEADERSHIP KEY<br>6. Three riddle tokens IN THE ORDER EARNED<br><br>NO SPACES. NO DASHES.</div><input id="finalCode"><button id="finalBtn">RECOVER BRIEFING</button></div>`;
- let answer="LDRSHIPCREEDPATH200OWNIT"+riddleTokens.join("");
- $("#finalBtn").onclick=()=>{let v=$("#finalCode").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");if(v!==answer)return penalty(110,"Extraction code rejected");completeRoom("FUTURE READINESS BRIEFING // RECOVERED","All six readiness systems restored")}
- }
+ $("#work").innerHTML=`<div class="task"><h3>FINAL RIDDLE TOKEN</h3><div class="riddle">If you’ve got me, you want to share me; if you share me, you haven’t kept me. What am I?</div><input id="rr3" placeholder="ENTER ANSWER"><button id="rr3b">UNLOCK FINAL TOKEN</button></div><div id="finalExtract"></div>`;
+ $("#rr3b").onclick=()=>{let v=$("#rr3").value.trim().toLowerCase();if(!["secret","a secret"].includes(v))return penalty(45,"Riddle rejected");tokens.push("S");$("#finalExtract").innerHTML=`<div class="task"><h3>FINAL EXTRACTION</h3><div class="codebox">BUILD THE CODE IN ROOM ORDER:<br><br>VALUES KEY<br>CREED KEY<br>PATHWAY KEY<br>FINANCE KEY<br>LEADERSHIP KEY<br>RIDDLE TOKEN 1<br>RIDDLE TOKEN 2<br>RIDDLE TOKEN 3<br><br>NO SPACES OR DASHES.</div><input id="finalCode" placeholder="ENTER EXTRACTION CODE"><button id="finalBtn">RECOVER BRIEFING</button></div>`;let answer="LDRSHIPHONORROUTESAVE200ADAPT"+tokens.join("");$("#finalBtn").onclick=()=>{let code=$("#finalCode").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");if(code!==answer)return penalty(110,"Extraction code rejected");clearRoom("FUTURE READINESS BRIEFING // VERSION B RECOVERED")}}
 }
 
-function finish(){clearInterval(timer);screen("complete");hud();$("#aar").innerHTML=`<div class="aarbox">CALLSIGN: ${callsign.toUpperCase()}<br>TIME REMAINING: ${fmt(time)}<br>READINESS SCORE: ${score}<br>HINTS USED: ${hints}<br>RIDDLE TOKENS: ${riddleTokens.join(" • ")}<br>ROOMS CLEARED: 6/6<br><br>STATUS: FUTURE READY</div>`}
+function finish(){clearInterval(timer);screen("complete");hud();$("#aar").innerHTML=`<div class="aarbox">CALLSIGN: ${callsign.toUpperCase()}<br>PATH: LET ${level}<br>TIME REMAINING: ${fmt(time)}<br>SCORE: ${score}<br>ROOMS CLEARED: 6/6<br>RIDDLE TOKENS: ${tokens.join(" • ")}<br><br>STATUS: FUTURE READY — VERSION B</div>`}
 hud();inv();
