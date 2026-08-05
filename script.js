@@ -62,71 +62,116 @@ function valuesRoom(){
 }
 
 function creedRoom(){
- const phrases=level==="3"?[
- ["I am an Army Junior ROTC Cadet.","IDENTITY"],
- ["I do not lie, cheat or steal...","ACCOUNTABILITY"],
- ["I will work hard to improve my mind and strengthen my body.","SELF-DEVELOPMENT"],
- ["I will seek the mantle of leadership...","LEADERSHIP"]
+ const blanks=level==="3"?[
+  ["I am an ___ Junior ROTC Cadet.","Army",["Army","American","Active","Armed"]],
+  ["I will always conduct myself to bring ___ to my family, country, school and the Corps of Cadets.","credit",["credit","attention","rank","victory"]],
+  ["I am loyal and ___ .","patriotic",["patriotic","obedient","fearless","competitive"]],
+  ["I do not lie, cheat or steal and will always be ___ for my actions and deeds.","accountable",["accountable","rewarded","recognized","responsible only when caught"]],
+  ["I will work hard to improve my ___ and strengthen my body.","mind",["mind","reputation","rank","uniform"]]
  ]:[
- ["I will always conduct myself to bring credit...","CHARACTER / CONDUCT"],
- ["I am loyal and patriotic.","LOYALTY / PATRIOTISM"],
- ["I do not lie, cheat or steal...","ACCOUNTABILITY"],
- ["I will seek the mantle of leadership and stand prepared to uphold the Constitution...","LEADERSHIP / CONSTITUTION"]
+  ["I will always conduct myself to bring ___ to my family, country, school and the Corps of Cadets.","credit",["credit","honor","attention","victory"]],
+  ["I am loyal and ___ .","patriotic",["patriotic","obedient","fearless","competitive"]],
+  ["I do not lie, cheat or ___ and will always be accountable for my actions and deeds.","steal",["steal","borrow","quit","complain"]],
+  ["I will always be accountable for my ___ and deeds.","actions",["actions","intentions","opinions","friends"]],
+  ["I will work hard to improve my ___ and strengthen my body.","mind",["mind","reputation","rank","image"]],
+  ["I will seek the ___ of leadership and stand prepared to uphold the Constitution and the American way of life.","mantle",["mantle","position","title","reward"]]
  ];
- const opts=[...new Set(phrases.map(x=>x[1]))];
- let seq=level==="3"?["I am an Army Junior ROTC Cadet.","I am loyal and patriotic.","I do not lie, cheat or steal and will always be accountable for my actions and deeds.","I will work hard to improve my mind and strengthen my body.","I will seek the mantle of leadership and stand prepared to uphold the Constitution and the American way of life."]:
- ["I am an Army Junior ROTC Cadet.","I will always conduct myself to bring credit to my family, country, school and the Corps of Cadets.","I am loyal and patriotic.","I do not lie, cheat or steal and will always be accountable for my actions and deeds.","I will seek the mantle of leadership and stand prepared to uphold the Constitution and the American way of life."];
+ const intruders=level==="3"?[
+  ["I am the future of the United States of America.",false],
+  ["I will always practice good citizenship and patriotism.",false],
+  ["I will work hard to improve my mind and strengthen my body.",false],
+  ["I will follow my friends whenever the group agrees.",true],
+  ["May God grant me the strength to always live by this creed.",false],
+  ["I will seek the mantle of leadership and stand prepared to uphold the Constitution and the American way of life.",false]
+ ]:[
+  ["I will always practice good citizenship and patriotism.",false],
+  ["I will place the reputation of my unit above the Constitution when necessary.",true],
+  ["I am the future of the United States of America.",false],
+  ["I will always obey every order without using judgment or proper channels.",true],
+  ["I do not lie, cheat or steal and will always be accountable for my actions and deeds.",false],
+  ["May God grant me the strength to always live by this creed.",false],
+  ["I will seek the mantle of leadership and stand prepared to uphold the Constitution and the American way of life.",false]
+ ];
+ let seq=level==="3"?[
+  "I am an Army Junior ROTC Cadet.",
+  "I will always conduct myself to bring credit to my family, country, school and the Corps of Cadets.",
+  "I am loyal and patriotic.",
+  "I do not lie, cheat or steal and will always be accountable for my actions and deeds.",
+  "I will work hard to improve my mind and strengthen my body.",
+  "I will seek the mantle of leadership and stand prepared to uphold the Constitution and the American way of life."
+ ]:[
+  "I am an Army Junior ROTC Cadet.",
+  "I will always conduct myself to bring credit to my family, country, school and the Corps of Cadets.",
+  "I am loyal and patriotic.",
+  "I am the future of the United States of America.",
+  "I do not lie, cheat or steal and will always be accountable for my actions and deeds.",
+  "I will always practice good citizenship and patriotism.",
+  "I will work hard to improve my mind and strengthen my body.",
+  "I will seek the mantle of leadership and stand prepared to uphold the Constitution and the American way of life."
+ ];
  const correct=[...seq];seq.sort(()=>Math.random()-.5);
- $("#work").innerHTML=`<div class="task"><h3>PHASE 1 // CREED MEANING</h3><div id="crows"></div><button id="ccheck">VERIFY MEANING</button></div><div id="corder" class="task" style="display:none"><h3>PHASE 2 // CREED SEQUENCE</h3><div id="sortc"></div><button id="ocheck">VERIFY SEQUENCE</button></div>`;
- let a=Array(phrases.length).fill("");
- phrases.forEach((x,i)=>{let row=document.createElement("div");row.className="matchrow";row.innerHTML=`<span>${x[0]}</span>`;let s=document.createElement("select");s.innerHTML=`<option value="">SELECT MEANING</option>`+opts.map(o=>`<option>${o}</option>`).join("");s.onchange=()=>a[i]=s.value;row.appendChild(s);$("#crows").appendChild(row)});
- $("#ccheck").onclick=()=>{if(a.some(x=>!x))return fb("Complete each Creed meaning.","warn");let n=a.filter((x,i)=>x===phrases[i][1]).length;if(n<phrases.length)return penalty((phrases.length-n)*50,`${n}/${phrases.length} Creed meanings correct`);$("#corder").style.display="block";draw()};
+ $("#work").innerHTML=`<div class="task"><h3>PHASE 1 // CREED FORENSICS</h3><p>Restore the exact Creed word in each damaged transmission. Decoy words are intentionally plausible.</p><div id="blankRows"></div><button id="blankCheck">VERIFY RESTORATION</button></div><div id="intruderBox" class="task" style="display:none"><h3>PHASE 2 // FIND THE INTRUDER${level==="4"?"S":""}</h3><p>${level==="4"?"Exactly TWO statements do not belong in the Cadet Creed. Select both.":"Exactly ONE statement does not belong in the Cadet Creed."}</p><div id="intruders"></div><button id="intruderCheck">VERIFY FORENSICS</button></div><div id="corder" class="task" style="display:none"><h3>PHASE 3 // REBUILD THE CREED</h3><p>Place the selected Creed statements in their correct relative order.</p><div id="sortc"></div><button id="ocheck">VERIFY SEQUENCE</button></div>`;
+ let a=Array(blanks.length).fill("");
+ blanks.forEach((x,i)=>{let row=document.createElement("div");row.className="matchrow";row.innerHTML=`<span>${x[0]}</span>`;let sel=document.createElement("select");sel.innerHTML=`<option value="">SELECT WORD</option>`+x[2].map(o=>`<option>${o}</option>`).join("");sel.onchange=()=>a[i]=sel.value;row.appendChild(sel);$("#blankRows").appendChild(row)});
+ $("#blankCheck").onclick=()=>{if(a.some(x=>!x))return fb("Restore every damaged word.","warn");let n=a.filter((x,i)=>x.toLowerCase()===blanks[i][1].toLowerCase()).length;if(n<blanks.length)return penalty((blanks.length-n)*45,`${n}/${blanks.length} Creed words restored`);$("#intruderBox").style.display="block";buildIntruders()};
+ let picked=[];
+ function buildIntruders(){let box=$("#intruders");box.innerHTML="";intruders.forEach((x,i)=>{let b=document.createElement("button");b.className="option";b.textContent=x[0];b.onclick=()=>{let at=picked.indexOf(i);if(at>=0){picked.splice(at,1);b.classList.remove("selected")}else{let max=level==="4"?2:1;if(picked.length<max){picked.push(i);b.classList.add("selected")}}};box.appendChild(b)})}
+ $("#intruderCheck").onclick=()=>{let need=intruders.map((x,i)=>x[1]?i:null).filter(x=>x!==null);if(picked.length!==need.length)return fb(`Select exactly ${need.length} intruder statement${need.length>1?"s":""}.`,"warn");if(JSON.stringify([...picked].sort())!==JSON.stringify([...need].sort()))return penalty(80,"Creed forensic selection rejected");$("#corder").style.display="block";draw()};
  function draw(){let b=$("#sortc");b.innerHTML="";seq.forEach((x,i)=>{let d=document.createElement("div");d.className="sortitem";d.innerHTML=`<span>${x}</span><div><button data-u="${i}">▲</button><button data-d="${i}">▼</button></div>`;b.appendChild(d)});b.querySelectorAll("[data-u]").forEach(q=>q.onclick=()=>{let i=+q.dataset.u;if(i){[seq[i-1],seq[i]]=[seq[i],seq[i-1]];draw()}});b.querySelectorAll("[data-d]").forEach(q=>q.onclick=()=>{let i=+q.dataset.d;if(i<seq.length-1){[seq[i+1],seq[i]]=[seq[i],seq[i+1]];draw()}})}
- $("#ocheck").onclick=()=>JSON.stringify(seq)===JSON.stringify(correct)?clearRoom("CREED KEY // HONOR"):penalty(70,"Creed sequence rejected")
+ $("#ocheck").onclick=()=>JSON.stringify(seq)===JSON.stringify(correct)?clearRoom("CREED KEY // HONOR"):penalty(90,"Creed sequence rejected")
 }
-
 function pathwayRoom(){
  const profiles=level==="3"?[
- ["Nia","3.6 GPA • wants teaching • wants a traditional campus • moderate financial need","Four-year university"],
- ["Caleb","2.8 GPA • enjoys welding • wants a faster route into skilled work","Career/technical program"],
- ["Tori","3.8 GPA • wants college + leadership training + possible scholarship support","Four-year college + ROTC"],
- ["Jaylen","Undecided • wants lower cost first two years • wants transfer option","Community college → transfer"]
+  ["Nia","3.6 GPA • wants teaching • wants a traditional campus • moderate financial need • bachelor's degree required for her target career","Four-year university","Career requires a bachelor's degree"],
+  ["Caleb","2.8 GPA • enjoys welding • wants a faster route into skilled work • prefers hands-on training","Career/technical program","Hands-on credential can lead directly to skilled employment"],
+  ["Tori","3.8 GPA • wants college + leadership training • interested in military service after college • wants scholarship opportunities","Four-year college + ROTC","Combines degree path with officer-development opportunity"],
+  ["Jaylen","Undecided • wants lower cost for the first two years • wants time to explore majors • wants transfer option","Community college → transfer","Lower-cost exploration while preserving transfer options"]
  ]:[
- ["Morgan","3.9 GPA • wants engineering • strong leadership record • willing to compete for scholarships","Four-year college + ROTC"],
- ["Darius","2.7 GPA • wants cybersecurity • prefers certifications and hands-on learning • wants to work sooner","Career/technical program"],
- ["Kayla","3.5 GPA • wants business • family obligations require staying close • wants lower first-year cost","Community college → transfer"],
- ["Elijah","3.8 GPA • wants a bachelor's degree in biology • has strong academic aid package","Four-year university"]
+  ["Morgan","3.9 GPA • wants engineering • strong leadership record • interested in commissioning • willing to accept a service obligation if the program fits","Four-year college + ROTC","Degree + ROTC aligns with engineering and commissioning goals"],
+  ["Darius","2.7 GPA • wants cybersecurity • prefers certifications and hands-on learning • wants to work sooner • may pursue a degree later","Career/technical program","Stackable technical credentials support faster entry and later growth"],
+  ["Kayla","3.5 GPA • wants business • family obligations require staying close • lower first-year cost is critical • wants bachelor's degree eventually","Community college → transfer","Local lower-cost start supports family needs and later transfer"],
+  ["Elijah","3.8 GPA • wants biology for a health-professions pathway • has a strong academic aid package • wants research access","Four-year university","Bachelor's pathway and research access fit long-term academic goals"],
+  ["Renee","3.4 GPA • wants electrical work • values paid training • wants little student debt • comfortable learning on the job","Career/technical program","Apprenticeship-style training can combine pay, skill, and credentialing"]
  ];
- const opts=["Four-year university","Community college → transfer","Career/technical program","Four-year college + ROTC","Immediate workforce with no further training"];
- $("#work").innerHTML=`<div class="task"><h3>PATHWAY MATRIX</h3><p>Choose the strongest realistic pathway for each cadet.</p><div id="profiles"></div><button id="pcheck">VERIFY MATRIX</button></div><div id="riddle2"></div>`;
- let a=Array(4).fill("");
- profiles.forEach((x,i)=>{let d=document.createElement("div");d.className="profile";d.innerHTML=`<b>${x[0]}</b><p>${x[1]}</p>`;let s=document.createElement("select");s.innerHTML=`<option value="">SELECT</option>`+opts.map(o=>`<option>${o}</option>`).join("");s.onchange=()=>a[i]=s.value;d.appendChild(s);$("#profiles").appendChild(d)});
- $("#pcheck").onclick=()=>{if(a.some(x=>!x))return fb("Choose all four pathways.","warn");let n=a.filter((x,i)=>x===profiles[i][2]).length;if(n<4)return penalty((4-n)*65,`${n}/4 pathway matches correct`);$("#riddle2").innerHTML=`<div class="task"><h3>RIDDLE TOKEN 2</h3><div class="riddle">How many sides does a circle have?</div><input id="rr2"><button id="rr2b">UNLOCK</button></div>`;$("#rr2b").onclick=()=>{let v=$("#rr2").value.trim().toLowerCase();if(!["2","two"].includes(v))return penalty(45,"Riddle rejected");tokens.push("2");clearRoom("PATHWAY KEY // ROUTE • TOKEN // 2")}}
+ const paths=["Four-year university","Community college → transfer","Career/technical program","Four-year college + ROTC","Immediate workforce with no further training"];
+ const reasons=[
+  "Career requires a bachelor's degree",
+  "Hands-on credential can lead directly to skilled employment",
+  "Combines degree path with officer-development opportunity",
+  "Lower-cost exploration while preserving transfer options",
+  "Degree + ROTC aligns with engineering and commissioning goals",
+  "Stackable technical credentials support faster entry and later growth",
+  "Local lower-cost start supports family needs and later transfer",
+  "Bachelor's pathway and research access fit long-term academic goals",
+  "Apprenticeship-style training can combine pay, skill, and credentialing",
+  "It sounds more impressive than the other options",
+  "Friends are choosing it"
+ ];
+ $("#work").innerHTML=`<div class="task"><h3>PHASE 1 // PATHWAY + EVIDENCE MATRIX</h3><p>For every cadet, choose BOTH the strongest pathway and the strongest reason. A possible pathway is not always the best-fit pathway.</p><div id="profiles"></div><button id="pcheck">VERIFY MATRIX</button></div><div id="constraintBox"></div><div id="riddle2"></div>`;
+ let a=Array(profiles.length).fill("").map(()=>({p:"",r:""}));
+ profiles.forEach((x,i)=>{let d=document.createElement("div");d.className="profile";d.innerHTML=`<b>${x[0]}</b><p>${x[1]}</p>`;let ps=document.createElement("select");ps.innerHTML=`<option value="">SELECT PATHWAY</option>`+paths.map(o=>`<option>${o}</option>`).join("");ps.onchange=()=>a[i].p=ps.value;let rs=document.createElement("select");rs.innerHTML=`<option value="">SELECT CONTROLLING REASON</option>`+reasons.map(o=>`<option>${o}</option>`).join("");rs.onchange=()=>a[i].r=rs.value;d.appendChild(ps);d.appendChild(rs);$("#profiles").appendChild(d)});
+ $("#pcheck").onclick=()=>{if(a.some(x=>!x.p||!x.r))return fb("Complete both selections for every cadet.","warn");let n=a.filter((x,i)=>x.p===profiles[i][2]&&x.r===profiles[i][3]).length;if(n<profiles.length)return penalty((profiles.length-n)*60,`${n}/${profiles.length} pathway/evidence pairs correct`);constraint()};
+ function constraint(){let html=level==="3"?`<div class="task"><h3>PHASE 2 // CONSTRAINT UPDATE</h3><p>Caleb learns that the welding program he selected is <b>not recognized by the employers he wants to work for</b>. What is the strongest response?</p><button class="option" id="pa">Enroll anyway because technical school is still the right category.</button><button class="option" id="pb">Find an accredited/recognized welding program or apprenticeship that still fits his hands-on career goal.</button><button class="option" id="pc">Switch automatically to a four-year university.</button></div>`:`<div class="task"><h3>PHASE 2 // CONSTRAINT UPDATE</h3><p>Morgan receives a confirmed ROTC scholarship offer at a university with engineering, but accepting it includes a future service obligation. What is the strongest response?</p><button class="option" id="pa">Accept immediately because free tuition is always the best choice.</button><button class="option" id="pb">Compare the service obligation, engineering fit, career goals, and scholarship terms before committing.</button><button class="option" id="pc">Reject ROTC automatically because any obligation removes personal choice.</button></div>`;$("#constraintBox").innerHTML=html;$("#pa").onclick=()=>penalty(85,"Pathway category alone is not enough; program quality and requirements matter");$("#pc").onclick=()=>penalty(85,"A major decision should not be automatic");$("#pb").onclick=()=>riddle()}
+ function riddle(){$("#riddle2").innerHTML=`<div class="task"><h3>RIDDLE TOKEN 2</h3><div class="riddle">How many sides does a circle have?</div><input id="rr2"><button id="rr2b">UNLOCK</button></div>`;$("#rr2b").onclick=()=>{let v=$("#rr2").value.trim().toLowerCase();if(!["2","two"].includes(v))return penalty(45,"Riddle rejected");tokens.push("2");clearRoom("PATHWAY KEY // ROUTE • TOKEN // 2")}}
 }
-
 function financeRoom(){
  const items=level==="3"?[
- ["Rent","NEED"],["Groceries","NEED"],["Streaming service","WANT"],["New gaming headset","WANT"],["Phone plan","DEPENDS"],["Transportation to work/school","NEED"]
+  ["Rent","NEED"],["Groceries","NEED"],["Basic transportation to work/school","NEED"],["Premium streaming bundle","WANT"],["Restaurant delivery twice a week","WANT"],["Phone plan","DEPENDS"],["New sneakers when current pair is usable","WANT"],["Minimum emergency savings contribution","NEED"]
  ]:[
- ["Rent","NEED"],["Emergency fund contribution","NEED"],["Premium streaming bundle","WANT"],["Restaurant delivery three times a week","WANT"],["Phone plan","DEPENDS"],["Transportation to work/school","NEED"]
+  ["Rent","NEED"],["Groceries","NEED"],["Car insurance","NEED"],["Gas for work/school","NEED"],["Three entertainment subscriptions","WANT"],["Restaurant delivery three times a week","WANT"],["Phone plan","DEPENDS"],["Emergency fund contribution","NEED"],["Upgraded laptop when current laptop meets school requirements","WANT"]
  ];
- $("#work").innerHTML=`<div class="task"><h3>PHASE 1 // NEED, WANT, DEPENDS</h3><div id="frows"></div><button id="fcheck">VERIFY</button></div><div id="budgetBox"></div>`;
- let a=Array(items.length).fill(null);items.forEach((x,i)=>{let row=document.createElement("div");row.className="classrow";row.innerHTML=`<span>${x[0]}</span>`;let s=document.createElement("select");s.innerHTML=`<option value="">SELECT</option><option>NEED</option><option>WANT</option><option>DEPENDS</option>`;s.onchange=()=>a[i]=s.value;row.appendChild(s);$("#frows").appendChild(row)});
- $("#fcheck").onclick=()=>{if(a.some(x=>!x))return fb("Classify every expense.","warn");let n=a.filter((x,i)=>x===items[i][1]).length;if(n<items.length)return penalty((items.length-n)*45,`${n}/${items.length} correct`);budget()};
+ $("#work").innerHTML=`<div class="task"><h3>PHASE 1 // FINANCIAL TRIAGE</h3><p>Classify each item. "Depends" means the category can change based on the actual plan, price, or circumstances.</p><div id="frows"></div><button id="fcheck">VERIFY TRIAGE</button></div><div id="budgetBox"></div>`;
+ let a=Array(items.length).fill("");items.forEach((x,i)=>{let row=document.createElement("div");row.className="classrow";row.innerHTML=`<span>${x[0]}</span>`;let sel=document.createElement("select");sel.innerHTML=`<option value="">SELECT</option><option>NEED</option><option>WANT</option><option>DEPENDS</option>`;sel.onchange=()=>a[i]=sel.value;row.appendChild(sel);$("#frows").appendChild(row)});
+ $("#fcheck").onclick=()=>{if(a.some(x=>!x))return fb("Classify every expense.","warn");let n=a.filter((x,i)=>x===items[i][1]).length;if(n<items.length)return penalty((items.length-n)*40,`${n}/${items.length} classifications correct`);budget()};
  function budget(){
-  const inc=level==="3"?1800:2250;
-  const fixed=level==="3"?1450:1785;
-  $("#budgetBox").innerHTML=`<div class="task"><h3>PHASE 2 // PAY YOURSELF FIRST</h3><p>Monthly income: <span class="money">$${inc}</span><br>Fixed needs: <span class="money">$${fixed}</span></p><p>You want at least <b>$200 saved first</b>. What is the MOST you should plan to spend on all remaining wants combined?</p><input id="budgetAns" type="number"><button id="budgetBtn">CHECK BUDGET</button></div><div id="creditBox"></div>`;
-  let answer=inc-fixed-200;
-  $("#budgetBtn").onclick=()=>+$("#budgetAns").value===answer?credit():penalty(60,"Budget amount rejected");
+  if(level==="3"){$("#budgetBox").innerHTML=`<div class="task"><h3>PHASE 2 // BUDGET UNDER PRESSURE</h3><p>Monthly income: <span class="money">$2,050</span></p><table class="budget"><tr><th>Need</th><th>Amount</th></tr><tr><td>Rent</td><td>$720</td></tr><tr><td>Utilities</td><td>$120</td></tr><tr><td>Groceries</td><td>$280</td></tr><tr><td>Transportation</td><td>$180</td></tr><tr><td>Basic phone</td><td>$70</td></tr></table><p>You must <b>pay yourself first: $200 savings</b>.</p><p>1) After needs and savings, how much is available for all wants?</p><input id="b1" type="number"><p>2) Wants planned: streaming $55 + restaurants $220 + sneakers $160. If all are purchased, how much money remains?</p><input id="b2" type="number"><button id="budgetBtn">VERIFY BUDGET</button></div><div id="shockBox"></div>`;$("#budgetBtn").onclick=()=>{if(+$("#b1").value!==480||+$("#b2").value!==45)return penalty(65,"Budget math rejected");shock3()}}
+  else{$("#budgetBox").innerHTML=`<div class="task"><h3>PHASE 2 // BUDGET UNDER PRESSURE</h3><p>Monthly income: <span class="money">$2,650</span></p><table class="budget"><tr><th>Need</th><th>Amount</th></tr><tr><td>Rent</td><td>$850</td></tr><tr><td>Utilities</td><td>$135</td></tr><tr><td>Groceries</td><td>$320</td></tr><tr><td>Car insurance</td><td>$190</td></tr><tr><td>Gas</td><td>$170</td></tr><tr><td>Phone</td><td>$85</td></tr></table><p>You must <b>pay yourself first: $200 savings</b>.</p><p>1) After needs and savings, how much remains for wants and buffer?</p><input id="b1" type="number"><p>2) Planned wants total $590. How much buffer remains after those wants?</p><input id="b2" type="number"><button id="budgetBtn">VERIFY BUDGET</button></div><div id="shockBox"></div>`;$("#budgetBtn").onclick=()=>{if(+$("#b1").value!==700||+$("#b2").value!==110)return penalty(65,"Budget math rejected");shock4()}}
  }
- function credit(){
-  let q=level==="3"?"Card limit $1,000; balance $760; you want to charge $200 sneakers.":"Card limit $1,500; balance $1,170; statement balance is carrying interest; you want to charge a $250 trip.";
-  $("#creditBox").innerHTML=`<div class="task"><h3>PHASE 3 // CREDIT DECISION</h3><p>${q}</p><button class="option" id="fa">Charge it because there is enough available credit.</button><button class="option" id="fb">Treat available credit as debt capacity, not spending money; protect cash flow and reduce the high balance first.</button><button class="option" id="fc">Open another card to create more room.</button></div>`;
-  $("#fa").onclick=()=>penalty(80,"Available credit does not prove affordability");$("#fc").onclick=()=>penalty(80,"More borrowing capacity does not fix the underlying balance");$("#fb").onclick=()=>clearRoom("FINANCE KEY // SAVE200");
- }
+ function shock3(){$("#shockBox").innerHTML=`<div class="task"><h3>PHASE 3 // SURPRISE EXPENSE</h3><p>A required $175 car repair appears. You only had a $45 buffer. Which adjustment preserves the $200 savings goal and protects true needs?</p><button class="option" id="s1">Take $130 from savings.</button><button class="option" id="s2">Cancel $55 streaming and reduce restaurants by $75.</button><button class="option" id="s3">Skip $130 of groceries.</button><button class="option" id="s4">Put the $175 repair on an already high-balance credit card.</button></div><div id="creditBox"></div>`;$("#s1").onclick=()=>penalty(80,"That breaks the pay-yourself-first goal");$("#s3").onclick=()=>penalty(80,"Groceries are a true need in this scenario");$("#s4").onclick=()=>penalty(80,"New high-interest debt should not be the first solution when discretionary cuts are available");$("#s2").onclick=()=>credit3()}
+ function shock4(){$("#shockBox").innerHTML=`<div class="task"><h3>PHASE 3 // SURPRISE EXPENSE</h3><p>A required $260 school fee appears. You have a $110 buffer. Which adjustment covers the remaining $150 while preserving $200 savings and all true needs?</p><button class="option" id="s1">Reduce travel/entertainment by $100 and restaurant spending by $50.</button><button class="option" id="s2">Reduce savings by $150.</button><button class="option" id="s3">Delay car insurance and use the money for the fee.</button><button class="option" id="s4">Charge the entire fee to a high-balance card without changing spending.</button></div><div id="creditBox"></div>`;$("#s2").onclick=()=>penalty(80,"That breaks the pay-yourself-first plan");$("#s3").onclick=()=>penalty(80,"Car insurance is a true need in this scenario");$("#s4").onclick=()=>penalty(80,"Debt does not replace a spending adjustment");$("#s1").onclick=()=>credit4()}
+ function credit3(){$("#creditBox").innerHTML=`<div class="task"><h3>PHASE 4 // CREDIT UTILIZATION</h3><p>Credit limit: $1,200. Current balance: $780. If you charge another $180, what will the card utilization percentage be?</p><input id="util" type="number" placeholder="WHOLE PERCENT"><button id="utilBtn">CHECK UTILIZATION</button></div>`;$("#utilBtn").onclick=()=>+$("#util").value===80?clearRoom("FINANCE KEY // SAVE200"):penalty(70,"Utilization calculation rejected")}
+ function credit4(){$("#creditBox").innerHTML=`<div class="task"><h3>PHASE 4 // CREDIT UTILIZATION</h3><p>Credit limit: $1,800. Balance: $1,170. You make a $300 payment, then charge $240. Enter the NEW balance and utilization percentage rounded to the nearest whole percent.</p><label>NEW BALANCE<input id="bal" type="number"></label><label>UTILIZATION %<input id="util" type="number"></label><button id="utilBtn">CHECK CREDIT MATH</button></div>`;$("#utilBtn").onclick=()=>{if(+$("#bal").value!==1110||+$("#util").value!==62)return penalty(70,"Credit math rejected");clearRoom("FINANCE KEY // SAVE200")}}
 }
-
 function leadershipRoom(){
  const schools=level==="3"?[
  ["COLLEGE A","Desired major • $21,000/year net cost • far from home"],
