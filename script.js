@@ -156,7 +156,7 @@ function pathwayRoom(){
 }
 function financeRoom(){
  const items=level==="3"?[
-  ["Rent","NEED"],["Groceries","NEED"],["Basic transportation to work/school","NEED"],["Premium streaming bundle","WANT"],["Restaurant delivery twice a week","WANT"],["Phone plan","DEPENDS"],["New sneakers when current pair is usable","WANT"],["Minimum emergency savings contribution","NEED"]
+  ["Rent","NEED"],["Groceries","NEED"],["Basic transportation to work/school","NEED"],["Premium streaming bundle","WANT"],["Restaurant delivery twice a week","WANT"],["Phone plan","DEPENDS"],["New $170 sneakers when you already have another usable pair","WANT"],["Replacement shoes because your only pair is torn and unusable","NEED"],["Minimum emergency savings contribution","NEED"]
  ]:[
   ["Rent","NEED"],["Groceries","NEED"],["Car insurance","NEED"],["Gas for work/school","NEED"],["Three entertainment subscriptions","WANT"],["Restaurant delivery three times a week","WANT"],["Phone plan","DEPENDS"],["Emergency fund contribution","NEED"],["Upgraded laptop when current laptop meets school requirements","WANT"]
  ];
